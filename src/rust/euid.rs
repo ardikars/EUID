@@ -1,6 +1,6 @@
 // MIT License
 // 
-// Copyright (c) [2023] [Ardika Rommy Sanjaya]
+// Copyright (c) 2023 Ardika Rommy Sanjaya
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -90,14 +90,30 @@ impl EUID {
         euid[1] = w1 | rw1;
     }
 
+    fn now(epoch: u64) -> u64 {
+        let duration = SystemTime::now()
+            .duration_since(UNIX_EPOCH);
+        match duration {
+            Ok(now) => {
+                let millis: u64 = now.as_millis() as u64 & EUID::TIMESTAMP_BITMASK;
+                if epoch < millis {
+                    millis - epoch
+                } else {
+                    millis
+                }
+            },
+            Err(_) => {
+                let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis();
+                now as u64 & EUID::TIMESTAMP_BITMASK
+            }
+        }
+    }
+
     // Using unix epoch and no shard_id
     pub fn random() -> Self {
         let mut euid: [u32; 4] = [0u32; 4];
         random::random(&mut euid);
-        let now: u64 = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_millis() as u64 & EUID::TIMESTAMP_BITMASK;
+        let now: u64 = EUID::now(0);
         EUID::engine_random_euid(&mut euid, now, 0, EUID::VERSION);
         Self(euid)
     }
@@ -106,10 +122,7 @@ impl EUID {
     pub fn with_shard_id(shard_id: u16) -> Self {
         let mut euid: [u32; 4] = [0u32; 4];
         random::random(&mut euid);
-        let now: u64 = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_millis() as u64 & EUID::TIMESTAMP_BITMASK;
+        let now: u64 = EUID::now(0);
         EUID::engine_random_euid(&mut euid, now, shard_id, EUID::VERSION);
         Self(euid)
     }
@@ -118,10 +131,7 @@ impl EUID {
     pub fn with_epoch(epoch: u64) -> Self {
         let mut euid: [u32; 4] = [0u32; 4];
         random::random(&mut euid);
-        let now: u64 = (SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_millis() as u64 & EUID::TIMESTAMP_BITMASK) - epoch;
+        let now: u64 = EUID::now(epoch);
         EUID::engine_random_euid(&mut euid, now, 0, EUID::VERSION);
         Self(euid)
     }
@@ -130,10 +140,7 @@ impl EUID {
     pub fn with_epoch_and_shard_id(epoch: u64, shard_id: u16) -> Self {
         let mut euid: [u32; 4] = [0u32; 4];
         random::random(&mut euid);
-        let now: u64 = (SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_millis() as u64 & EUID::TIMESTAMP_BITMASK) - epoch;
+        let now = EUID::now(epoch);
         EUID::engine_random_euid(&mut euid, now, shard_id, EUID::VERSION);
         Self(euid)
     }
@@ -191,8 +198,30 @@ impl FromStr for EUID {
                 euid[3] = u32::from_be_bytes([v[12], v[13], v[14], v[15]]);
                 Ok(EUID(euid))
             },
-            Err(_) => {
-                Err(PersingError::InvalidLength)
+            Err(e) => {
+                match e {
+                    bech32::Error::MissingSeparator => {
+                        Err(PersingError::MissingSeparator)
+                    },
+                    bech32::Error::InvalidChecksum => {
+                        Err(PersingError::InvalidChecksum)
+                    },
+                    bech32::Error::InvalidLength => {
+                        Err(PersingError::InvalidLength)
+                    },
+                    bech32::Error::InvalidChar(c) => {
+                        Err(PersingError::InvalidChar(c))
+                    },
+                    bech32::Error::InvalidData(d) => {
+                        Err(PersingError::InvalidData(d))
+                    },
+                    bech32::Error::InvalidPadding => {
+                        Err(PersingError::InvalidPadding)
+                    },
+                    bech32::Error::MixedCase => {
+                        Err(PersingError::MixedCase)
+                    }
+                }
             }
         };
     } 
@@ -237,10 +266,7 @@ mod tests {
     #[test]
     fn timestamp() {
         for i in 0..65536 {
-            let now = (SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .expect("Time went backwards")
-                .as_millis() as u64 & EUID::TIMESTAMP_BITMASK) ^ (i as u64);
+            let now = EUID::now(0) ^ (i as u64);
             let mut euid = [0u32; 4];
             EUID::engine_random_euid(&mut euid, now, 0, 0);
             let result = EUID(euid);
@@ -269,21 +295,25 @@ mod tests {
 
     #[test]
     fn from_str() {
-        let random = EUID::random();
-        let r = random.to_string("app");
-        match r {
-            Ok(encoded) => {
-                let d = EUID::from_str(&encoded);
-                match d {
-                    Ok(decoded) => {
-                        assert_eq!(random, decoded);
-                    },
-                    Err(_) => {
-
+        for _ in 0..65536 {
+            let random = EUID::random();
+            let r = random.to_string("app");
+            match r {
+                Ok(encoded) => {
+                    let d = EUID::from_str(&encoded);
+                    match d {
+                        Ok(decoded) => {
+                            assert_eq!(random, decoded);
+                        },
+                        Err(_) => {
+                            assert_eq!(1, 0)
+                        }
                     }
+                },
+                Err(_) => {
+                    assert_eq!(1, 0)
                 }
-            },
-            Err(_) => {}
+            }
         }
     }
 }

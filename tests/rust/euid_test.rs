@@ -1,6 +1,6 @@
 // MIT License
 // 
-// Copyright (c) [2023] [Ardika Rommy Sanjaya]
+// Copyright (c) 2023 Ardika Rommy Sanjaya
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -67,6 +67,7 @@ fn euid_random_test() {
     match euid.to_string("uid") {
         Ok(encoded) => {
             assert_ne!(String::from(""), encoded);
+            println!("{}", euid);
         },
         Err(_) => {
             assert_eq!("", "");
