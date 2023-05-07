@@ -1,0 +1,20 @@
+[package]
+name = "euid"
+version = "0.1.0"
+authors = ["Ardika Rommy Sanjaya <contact@ardikars.com>"]
+edition = "2021"
+
+[dependencies]
+getrandom = "0.2"
+bech32 = "0.9.1"
+
+[lib]
+name = "euid"
+crate-type = ["rlib"]
+path = "src/rust/lib.rs"
+edition = "2021"
+test = true
+harness = true
+bench = false
+doc = true
+doctest = true
