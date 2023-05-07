@@ -1,6 +1,6 @@
 # DRAFT#1
 
-## Extendable Universal Unique Identifier
+## Extendable Universally Unique Identifier
 
 Extendable means you can use this ID for sharding or customizing timestamp epoch. 
 
