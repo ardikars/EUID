@@ -149,6 +149,11 @@ impl EUID {
         ((self.0[0] as u64) << 10) | ((self.0[1] as u64) >> 22)
     }
 
+    pub fn timestamp_with_epoch(&self, epoch: u64) -> u64 {
+        let timestamp = self.timestamp() as u128; // handling integer overflow
+        ((timestamp + epoch as u128) as u64) & EUID::TIMESTAMP_BITMASK
+    }
+
     pub fn shard_id(&self) -> u16 {
         let shard_id_bit_len = (self.0[1] >> 3) & EUID::SHARD_ID_LEN_BITMASK;
         ((self.0[1] >> 7) & ((1 << shard_id_bit_len) - 1)) as u16
@@ -271,6 +276,8 @@ mod tests {
             EUID::engine_random_euid(&mut euid, now, 0, 0);
             let result = EUID(euid);
             assert_eq!(now, result.timestamp());
+            let overflow_epoch: u64 = 18446744073709551615u64;
+            assert_ne!(now, result.timestamp_with_epoch(overflow_epoch));
         }
     }
 
