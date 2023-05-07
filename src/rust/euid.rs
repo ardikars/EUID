@@ -21,12 +21,32 @@
 // SOFTWARE.
 
 
-use std::{time::{UNIX_EPOCH, SystemTime}, fmt::{Display}};
+use std::{time::{UNIX_EPOCH, SystemTime}, fmt::{Display}, str::FromStr};
 
-use bech32::ToBase32;
+use bech32::{ToBase32, FromBase32};
 
 use crate::random;
 
+/// Error types for Bech32 encoding / decoding
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub enum PersingError {
+    /// String does not contain the separator character
+    MissingSeparator,
+    /// The checksum does not match the rest of the data
+    InvalidChecksum,
+    /// The data or human-readable part is too long or too short
+    InvalidLength,
+    /// Some part of the string contains an invalid character
+    InvalidChar(char),
+    /// Some part of the data has an invalid value
+    InvalidData(u8),
+    /// The bit conversion failed due to a padding issue
+    InvalidPadding,
+    /// The whole string must be of one case
+    MixedCase,
+}
+
+#[derive(PartialEq, Debug)]
 pub struct EUID([u32; 4]);
 
 // 0                   1                   2                   3
@@ -155,6 +175,29 @@ impl EUID {
 
 }
 
+impl FromStr for EUID {
+
+    type Err = PersingError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let b = bech32::decode(s);
+        return match b {
+            Ok((_hrp, data, _variant)) => {
+                let v = Vec::<u8>::from_base32(&data).unwrap();
+                let mut euid: [u32; 4] = [0u32; 4];
+                euid[0] = u32::from_be_bytes([v[0], v[1], v[2], v[3]]);
+                euid[1] = u32::from_be_bytes([v[4], v[5], v[6], v[7]]);
+                euid[2] = u32::from_be_bytes([v[8], v[9], v[10], v[11]]);
+                euid[3] = u32::from_be_bytes([v[12], v[13], v[14], v[15]]);
+                Ok(EUID(euid))
+            },
+            Err(_) => {
+                Err(PersingError::InvalidLength)
+            }
+        };
+    } 
+}
+
 impl Display for EUID {
 
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -221,6 +264,26 @@ mod tests {
             EUID::engine_random_euid(&mut euid, 0, 0, x);
             let result = EUID(euid);
             assert_eq!(x + 1, result.version() as u8);
+        }
+    }
+
+    #[test]
+    fn from_str() {
+        let random = EUID::random();
+        let r = random.to_string("app");
+        match r {
+            Ok(encoded) => {
+                let d = EUID::from_str(&encoded);
+                match d {
+                    Ok(decoded) => {
+                        assert_eq!(random, decoded);
+                    },
+                    Err(_) => {
+
+                    }
+                }
+            },
+            Err(_) => {}
         }
     }
 }
