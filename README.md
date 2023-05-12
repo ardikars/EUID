@@ -42,4 +42,4 @@ Reference implementation is in src/ directory.
 
 * [UUID](https://www.ietf.org/rfc/rfc4122.txt)
 * [ULID](https://github.com/ulid/spec)
-* [Instagram Engineering](https://victoryosayi.medium.com/ulid-universally-unique-lexicographically-sortable-identifier-d75c253bc6a8)
+* [Instagram Engineering](https://instagram-engineering.tumblr.com/post/10853187575/sharding-ids-at-instagram)
