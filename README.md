@@ -7,7 +7,7 @@ Extendable means you can use this ID for sharding or customizing timestamp epoch
 ### Components
 
 * 3 bit version number
-* 4 bit shard_id length (optional, 0 means shard Id is isn't required)
+* 4 bit shard_id length (optional, 0 means shard Id isn't required)
 * N bit of shard_id
 * 42 bit timestamp with customizable epoch (default is unix epoch)
 * 64 + remaining bit (in shard_id block) random number
