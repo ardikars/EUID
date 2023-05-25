@@ -1,20 +1,28 @@
 [package]
 name = "euid"
 version = "0.1.0"
-authors = ["Ardika Rommy Sanjaya <contact@ardikars.com>"]
 edition = "2021"
+description = "Reference implementation for EUID"
+license = "MIT"
+homepage = "https://github.com/ardikars/euid"
 
 [dependencies]
 getrandom = "0.2"
-bech32 = "0.9.1"
+
+[dev-dependencies]
+rand = "0.8.5"
+criterion = "0.3"
 
 [lib]
 name = "euid"
 crate-type = ["rlib"]
-path = "src/rust/lib.rs"
+path = "src/lib.rs"
 edition = "2021"
-test = true
-harness = true
-bench = false
-doc = true
-doctest = true
+
+[[bench]]
+name = "euid_create"
+harness = false
+
+[[bench]]
+name = "euid_create_with_extension"
+harness = false

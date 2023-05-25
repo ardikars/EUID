@@ -20,57 +20,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use euid::euid::EUID;
+#![no_main]
+use libfuzzer_sys::fuzz_target;
+use euid::EUID;
 
-#[test]
-fn euid_with_epoch_and_shard_id_test() {
-    let euid = EUID::with_epoch_and_shard_id(0, 32);
-    match euid.to_string("uid") {
-        Ok(encoded) => {
-            assert_ne!(String::from(""), encoded);
-        },
-        Err(_) => {
-            assert_eq!("", "");
+fuzz_target!(|data: &[u8]| {
+    let mut v = [0u8; 8];
+    for i in 0..data.len() {
+        v[7-i] = data[i];
+        if i == 7 {
+            break;
         }
     }
-}
-
-#[test]
-fn euid_with_epoch_test() {
-    let euid = EUID::with_epoch(0);
-    match euid.to_string("uid") {
-        Ok(encoded) => {
-            assert_ne!(String::from(""), encoded);
-        },
-        Err(_) => {
-            assert_eq!("", "");
-        }
-    }
-}
-
-#[test]
-fn euid_with_shard_id_test() {
-    let euid = EUID::with_shard_id(32);
-    match euid.to_string("uid") {
-        Ok(encoded) => {
-            assert_ne!(String::from(""), encoded);
-        },
-        Err(_) => {
-            assert_eq!("", "");
-        }
-    }
-}
-
-#[test]
-fn euid_random_test() {
-    let euid = EUID::random();
-    match euid.to_string("uid") {
-        Ok(encoded) => {
-            assert_ne!(String::from(""), encoded);
-            println!("{}", euid);
-        },
-        Err(_) => {
-            assert_eq!("", "");
-        }
-    }
-}
+    let _ = EUID::create_with_extension(u64::from_be_bytes(v) as u16);
+});

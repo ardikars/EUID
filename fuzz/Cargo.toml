@@ -10,6 +10,7 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 
+
 [dependencies.euid]
 path = ".."
 
@@ -21,25 +22,7 @@ members = ["."]
 debug = 1
 
 [[bin]]
-name = "from_str"
-path = "fuzz_targets/from_str.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "with_epoch_and_shard_id"
-path = "fuzz_targets/with_epoch_and_shard_id.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "with_epoch"
-path = "fuzz_targets/with_epoch.rs"
-test = false
-doc = false
-
-[[bin]]
-name = "with_shard_id"
-path = "fuzz_targets/with_shard_id.rs"
+name = "euid_create_with_extension"
+path = "fuzz_targets/euid_create_with_extension.rs"
 test = false
 doc = false
