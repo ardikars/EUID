@@ -25,9 +25,9 @@ Binary layout (Big Endian):
 Extension is 15 bits of user-attached data (0-32767). If the data is less than 15 bits then the remaining bits are filled with random data.
 
 
-## Encoding
+## Encoding/Decoding Symbols
 
-The encoding method is using Crockford's Base-32 excluding checksum symbol.
+The encoding/decoding symbols are using Crockford's Base32 excluding the check symbol (`*`,`~`,`$`,`=`,`U`,`u`) and hyphens (`-`) separator.
 
 | Symbol Value | Decode Symbol | Encode Symbol |
 |--------------|---------------|---------------|
