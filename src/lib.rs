@@ -124,28 +124,18 @@ impl EUID {
         }
     }
 
-    fn get_ext_bit_len(ext: &u16) -> u64 {
-        let mut x: u16 = *ext & 0x7fff;
+    fn get_ext_bit_len(ext: u16) -> u64 {
+        let mut x: u16 = ext & 0x7fff;
         if x == 0 {
-            return 15;
+            15
+        } else {
+            let mut n: u64 = 0;
+            if x <= 0x00ff { n += 8; x <<= 8; }
+            if x <= 0x0fff { n += 4; x <<= 4; }
+            if x <= 0x3fff { n += 2; x <<= 2; }
+            if x <= 0x7fff { n += 1; }
+            16 - n
         }
-        let mut n: u64 = 0;
-        if x <= 0x00ff {
-            n += 8;
-            x <<= 8;
-        }
-        if x <= 0x0fff {
-            n += 4;
-            x <<= 4;
-        }
-        if x <= 0x3fff {
-            n += 2;
-            x <<= 2;
-        }
-        if x <= 0x7fff {
-            n += 1;
-        }
-        16 - n
     }
 
     fn normalize_timestamp(now: u64, epoch: u64) -> u64 {
@@ -173,7 +163,7 @@ impl EUID {
     #[inline(always)]
     fn create_with_timestamp_and_extension(timestamp: u64, extension: u16) -> EUID {
         let version: u64 = EUID::VERSION_1 & EUID::VERSION_BITMASK;
-        let ext_len: u64 = EUID::get_ext_bit_len(&extension);
+        let ext_len: u64 = EUID::get_ext_bit_len(extension);
         let ext_data: u64 = (extension as u64) & EUID::EXT_DATA_BITMASK;
         let remain_rand: u64 = (random::random_u32() & ((1 << (15 - ext_len)) - 1)) as u64;
         let hi: u64 = (timestamp << 22)
@@ -303,7 +293,7 @@ mod tests {
             assert!(diff < 50);
             assert_eq!((i as u64 & EUID::EXT_DATA_BITMASK) as u16, euid.extension());
             assert!(euid.extension() as u64 <= EUID::EXT_DATA_BITMASK);
-            assert!(EUID::get_ext_bit_len(&(euid.extension())) <= EUID::EXT_LEN_BITMASK);
+            assert!(EUID::get_ext_bit_len(euid.extension()) <= EUID::EXT_LEN_BITMASK);
             assert_eq!(1, euid.version());
             assert!((euid.version() - 1) as u64 <= EUID::VERSION_BITMASK);
         }
