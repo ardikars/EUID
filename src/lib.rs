@@ -69,10 +69,15 @@ impl EUID {
     /// ```rust
     /// use euid::EUID;
     ///
-    /// let euid: EUID = EUID::create();
+    /// let euid: EUID = EUID::create().unwrap_or_default();
     /// ```
-    pub fn create() -> EUID {
-        EUID::create_with_timestamp_and_extension(EUID::get_timestamp_from_epoch(EUID::EPOCH), 0)
+    pub fn create() -> Option<EUID> {
+        let ts: u64 = EUID::get_timestamp_from_epoch(EUID::EPOCH);
+        if ts > EUID::TIMESTAMP_BITMASK {
+            None
+        } else {
+            Some(EUID::create_with_timestamp_and_extension(ts, 0))
+        }
     }
 
     /// Create random EUID with attachable data (max 15 bit).
@@ -85,13 +90,18 @@ impl EUID {
     /// let euid: Option<EUID> = EUID::create_with_extension(1);
     /// ```
     pub fn create_with_extension(extension: u16) -> Option<EUID> {
-        if extension > (EUID::EXT_DATA_BITMASK) as u16 {
+        let ts: u64 = EUID::get_timestamp_from_epoch(EUID::EPOCH);
+        if ts > EUID::TIMESTAMP_BITMASK {
             None
         } else {
-            Some(EUID::create_with_timestamp_and_extension(
-                EUID::get_timestamp_from_epoch(EUID::EPOCH),
-                extension,
-            ))
+            if extension > (EUID::EXT_DATA_BITMASK) as u16 {
+                None
+            } else {
+                Some(EUID::create_with_timestamp_and_extension(
+                    EUID::get_timestamp_from_epoch(EUID::EPOCH),
+                    extension,
+                ))
+            }
         }
     }
 
@@ -172,6 +182,14 @@ impl EUID {
             | ext_len << 3
             | version;
         EUID(hi, random::random_u64())
+    }
+}
+
+// Default value for overflow value
+impl Default for EUID {
+
+    fn default() -> EUID {
+        EUID(0, 0)
     }
 }
 
@@ -305,7 +323,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_millis() as u64;
-        let euid: EUID = EUID::create();
+        let euid: EUID = EUID::create().unwrap_or_default();
         let timestamp: u64 = euid.timestamp();
         let diff: u64 = get_timestamp_diff(now, timestamp);
         assert!(diff < 50);
@@ -386,7 +404,7 @@ mod tests {
 
     #[test]
     fn print_test() {
-        let euid: EUID = EUID::create();
+        let euid: EUID = EUID::create().unwrap_or_default();
         println!("{}", euid.to_string());
         println!("{:?}", euid.to_string());
     }
