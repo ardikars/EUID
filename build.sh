@@ -3,6 +3,9 @@
 # Clean Project
 cargo clean
 
+cargo fmt
+cargo clippy
+
 # Code Coverage
 rustup component add llvm-tools-preview
 export RUSTFLAGS="-Cinstrument-coverage"
@@ -15,4 +18,4 @@ grcov . -s . --binary-path ./target/debug/ -t html --branch --ignore-not-existin
 cargo doc
 
 # Package Lib
-cargo package
+# cargo package

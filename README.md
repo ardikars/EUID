@@ -1,4 +1,4 @@
-# DRAFT#2
+# DRAFT#3
 
 ## Extendable Universally Unique Identifier
 
@@ -27,7 +27,6 @@ Extension is 15 bits of user-attached data (0-32767). If the data is less than 1
 
 ## Encoding/Decoding Symbols
 
-The encoding/decoding symbols are using Crockford's Base32 excluding the check symbol (`*`,`~`,`$`,`=`,`U`,`u`) and hyphens (`-`) separator.
 
 | Symbol Value | Decode Symbol | Encode Symbol |
 |--------------|---------------|---------------|
@@ -41,28 +40,28 @@ The encoding/decoding symbols are using Crockford's Base32 excluding the check s
 | 7 | `7` | `7` |
 | 8 | `8` | `8` |
 | 9 | `9` | `9` |
-| 10 | `A` `a` | `A` `a` |
-| 11 | `B` `b` | `B` `b` |
-| 12 | `C` `c` | `C` `c` |
-| 13 | `D` `d` | `D` `d` |
-| 14 | `E` `e` | `E` `e` |
-| 15 | `F` `f` | `F` `f` |
-| 16 | `G` `g` | `G` `g` |
-| 17 | `H`  `h`| `H` `h` |
-| 18 | `J` `j` | `J` `j` |
-| 19 | `K` `k` | `K` `k` |
-| 20 | `M` `m` | `M` `m` |
-| 21 | `N` `n` | `N` `n` |
-| 22 | `P` `p` | `P` `p` |
-| 23 | `Q` `q` | `Q` `q` |
-| 24 | `R` `r` | `R` `r` |
-| 25 | `S` `s` | `S` `s` |
-| 26 | `T` `t` | `T` `t` |
-| 27 | `V` `v` | `V` `v` |
-| 28 | `W` `w` | `W` `w` |
-| 29 | `X` `x` | `X` `x` |
-| 30 | `Y` `y` | `Y` `y` |
-| 31 | `Z` `z` | `Z` `z` |
+| 10 | `A` `a` | `A` |
+| 11 | `B` `b` | `B` |
+| 12 | `C` `c` | `C` |
+| 13 | `D` `d` | `D` |
+| 14 | `E` `e` | `E` |
+| 15 | `F` `f` | `F` |
+| 16 | `G` `g` | `G` |
+| 17 | `H` `h` | `H` |
+| 18 | `J` `j` | `J` |
+| 19 | `K` `k` | `K` |
+| 20 | `M` `m` | `M` |
+| 21 | `N` `n` | `N` |
+| 22 | `P` `p` | `P` |
+| 23 | `Q` `q` | `Q` |
+| 24 | `R` `r` | `R` |
+| 25 | `S` `s` | `S` |
+| 26 | `T` `t` | `T` |
+| 27 | `V` `v` | `V` |
+| 28 | `W` `w` | `W` |
+| 29 | `X` `x` | `X` |
+| 30 | `Y` `y` | `Y` |
+| 31 | `Z` `z` | `Z` |
 
 ### Reference implementation
 

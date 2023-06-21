@@ -19,6 +19,9 @@ crate-type = ["rlib"]
 path = "src/lib.rs"
 edition = "2021"
 
+[features]
+euid_128 = []
+
 [[bench]]
 name = "euid_create"
 harness = false

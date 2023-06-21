@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use crate::Error;
+use crate::{check, Error, EUID};
 
 #[allow(non_camel_case_types)]
 type u5 = usize;
@@ -53,8 +53,8 @@ static DECODING_SYMBOLS: &[u5] = &[
     29, 30, 31, // 120
 ];
 
-fn to_u5_slice(hi: &u64, lo: &u64) -> [u5; 26] {
-    let mut dst: [u5; 26] = [0usize; 26];
+fn to_u5_slice(hi: u64, lo: u64) -> [u5; 27] {
+    let mut dst: [u5; 27] = [0usize; 27];
     dst[0] = ((hi >> 59) & 0x1f) as u5;
     dst[1] = ((hi >> 54) & 0x1f) as u5;
     dst[2] = ((hi >> 49) & 0x1f) as u5;
@@ -85,7 +85,7 @@ fn to_u5_slice(hi: &u64, lo: &u64) -> [u5; 26] {
     dst
 }
 
-fn to_u64_slice(slice: &[u5; 26]) -> (u64, u64) {
+fn to_u64_slice(slice: &[u5; 27]) -> (u64, u64) {
     let hi: u64 = ((slice[0] as u64) << 59)
         | ((slice[1] as u64) << 54)
         | ((slice[2] as u64) << 49)
@@ -115,9 +115,9 @@ fn to_u64_slice(slice: &[u5; 26]) -> (u64, u64) {
     (hi, lo)
 }
 
-pub fn encode(hi: &u64, lo: &u64) -> String {
-    let slice: [u5; 26] = to_u5_slice(hi, lo);
-    let mut dst: [char; 26] = ['0'; 26];
+pub fn encode(euid: &EUID) -> String {
+    let slice: [u5; 27] = to_u5_slice(euid.0, euid.1);
+    let mut dst: [char; 27] = ['0'; 27];
     dst[0] = ENCODING_SYMBOLS[slice[0]];
     dst[1] = ENCODING_SYMBOLS[slice[1]];
     dst[2] = ENCODING_SYMBOLS[slice[2]];
@@ -143,42 +143,56 @@ pub fn encode(hi: &u64, lo: &u64) -> String {
     dst[22] = ENCODING_SYMBOLS[slice[22]];
     dst[23] = ENCODING_SYMBOLS[slice[23]];
     dst[24] = ENCODING_SYMBOLS[slice[24]];
-    dst[25] = ENCODING_SYMBOLS[slice[25]];
+    let check: usize = check::m7(euid);
+    dst[25] = ENCODING_SYMBOLS[slice[25] | (check >> 5)];
+    dst[26] = ENCODING_SYMBOLS[check & 0x1f];
     String::from_iter(dst)
 }
 
-pub fn decode(encoded: &str) -> Result<(u64, u64), Error> {
-    if encoded.len() != 26 {
-        return Err(Error::InvalidLength(encoded.len(), 26));
+pub fn decode(encoded: &str) -> Result<EUID, Error> {
+    if encoded.len() != 27 {
+        return Err(Error::InvalidLength(encoded.len(), 27));
     }
-    let mut src: [u5; 26] = [0usize; 26];
+    let mut slice: [u5; 27] = [0usize; 27];
     for (i, c) in encoded.chars().enumerate() {
         let code_point: usize = c as usize;
         if code_point >= DECODING_SYMBOLS.len() {
             return Err(Error::InvalidCharacter(c));
         }
-        src[i] = DECODING_SYMBOLS[code_point];
-        if src[i] == usize::MAX {
+        slice[i] = DECODING_SYMBOLS[code_point];
+        if slice[i] == usize::MAX {
             return Err(Error::InvalidCharacter(c));
         }
     }
-    Ok(to_u64_slice(&src))
+    let r: usize = slice[25] & 0x3;
+    slice[25] &= 0x1c;
+    let e: (u64, u64) = to_u64_slice(&slice);
+    let check: usize = (r << 5) | slice[26];
+    let euid: EUID = EUID(e.0, e.1);
+    let w = check::m7(&euid);
+    if check != w {
+        Err(Error::InvalidCheckmod(check, w))
+    } else {
+        Ok(euid)
+    }
 }
 
 #[cfg(test)]
 mod tests {
 
     use crate::{
-        base32::{decode, encode, to_u5_slice, to_u64_slice},
+        base32::{to_u5_slice, to_u64_slice},
         random, Error,
     };
+
+    use super::decode;
 
     #[test]
     fn convert_bits_test() {
         for _ in 0..65536 {
             let hi: u64 = random::random_u64();
             let lo: u64 = random::random_u64();
-            let slice: [usize; 26] = to_u5_slice(&hi, &lo);
+            let slice: [usize; 27] = to_u5_slice(hi, lo);
             let (hi2, lo2) = to_u64_slice(&slice);
             assert_eq!(hi, hi2);
             assert_eq!(lo, lo2);
@@ -186,30 +200,30 @@ mod tests {
     }
 
     #[test]
-    fn codec_test() {
-        for _ in 0..65535 {
-            let hi: u64 = random::random_u64();
-            let lo: u64 = random::random_u64();
-            let encoded: String = encode(&hi, &lo);
-            let (hi2, lo2) = decode(&encoded).unwrap();
-            assert_eq!(hi, hi2);
-            assert_eq!(lo, lo2);
-        }
+    fn decode_test() {
         assert_eq!(
-            Err(Error::InvalidLength(25, 26)),
-            decode("C8754X9NN8H80X298KRKERG8K")
-        );
-        assert_eq!(
-            Err(Error::InvalidLength(27, 26)),
-            decode("C8754X9NN8H80X298KRKERG8K88")
+            Err(Error::InvalidCheckmod(127, 124)),
+            decode("C8EE0302R007HT3CH868ENZD8ZZ")
         );
         assert_eq!(
             Err(Error::InvalidCharacter('U')),
-            decode("C8754X9NN8H80X298KRKERG8KU")
+            decode("C8EE934SR007G5Q94QKKXFRFV8U")
         );
         assert_eq!(
             Err(Error::InvalidCharacter('}')),
-            decode("C8754X9NN8H80X298KRKERG8K}")
+            decode("C8EE934SR007G5Q94QKKXFRFV8}")
+        );
+        assert_eq!(
+            Err(Error::InvalidCharacter('@')),
+            decode("C8EE934SR007G5Q94QKKXFRFV8@")
+        );
+        assert_eq!(
+            Err(Error::InvalidLength(26, 27)),
+            decode("C8EE934SR007G5Q94QKKXFRFV8")
+        );
+        assert_eq!(
+            "C8EE934SR007G5Q94QKKXFRFV8B",
+            decode("C8EE934SR007G5Q94QKKXFRFV8B").unwrap().to_string()
         );
     }
 }
