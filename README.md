@@ -79,11 +79,10 @@ To guarantee a sortable ID, we split 64 bits of randomness (least significant bi
 
 * 128 bits
 * Human readable
-* Lexicographically sortable
+* Lexicographically sortable (optionaly monotonic, handles the same millisecond)
 * Extendable (can attach up to 15 bits user data)
 * Canonically encoded as a 27 character string
 * URL safe
-* Monotonic sort order (correctly detects and handles the same millisecond)
 * Case insensitive (Decoding)
 * Typo detection (check-mod)
 
