@@ -32,7 +32,7 @@ The encoding/decoding symbols use a set of 10 digits and 22 letters, excluding 4
 When decoding, upper and lower case letters are accepted, and i and l will be treated as 1 and o will be treated as 0. When encoding, only upper-case letters are used.
 
 The "check-mod symbols" are added to the last string for detecting transmission and entry errors early and inexpensively.
-The "check-mod symbol" encodes the number modulus 127. We can use the remaining bits and add one symbol (2 bits + 5 bits), so our final encoded ID is 27 symbols.
+The "check-mod symbol" encodes the number modulus 127. We can use the remaining bits and add one symbol (2 bits + 5 bits), so our final encoded ID is 27 character string.
 
 
 | Symbol Value | Decode Symbol | Encode Symbol |
@@ -73,6 +73,19 @@ The "check-mod symbol" encodes the number modulus 127. We can use the remaining 
 ## Monotonicity
 
 To guarantee a sortable ID, we split 64 bits of randomness (least significant bits) into two parts (high and low). The "high part" is incremented by 1, and the "low part" is a randomly generated number.
+
+
+### Features
+
+* 128 bits
+* Human readable
+* Lexicographically sortable
+* Extendable (can attach up to 15 bits user data)
+* Canonically encoded as a 27 character string
+* URL safe
+* Monotonic sort order (correctly detects and handles the same millisecond)
+* Case insensitive (Decoding)
+* Typo detection (check-mod)
 
 ### Reference implementation
 

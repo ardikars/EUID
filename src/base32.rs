@@ -168,12 +168,16 @@ pub fn decode(encoded: &str) -> Result<EUID, Error> {
     slice[25] &= 0x1c;
     let e: (u64, u64) = to_u64_slice(&slice);
     let check: usize = (r << 5) | slice[26];
-    let euid: EUID = EUID(e.0, e.1);
-    let w = check::m7(&euid);
-    if check != w {
-        Err(Error::InvalidCheckmod(check, w))
+    if check == 0x7f {
+        Err(Error::InvalidCheckmod(check, 0))
     } else {
-        Ok(euid)
+        let euid: EUID = EUID(e.0, e.1);
+        let w = check::m7(&euid);
+        if check != w {
+            Err(Error::InvalidCheckmod(check, w))
+        } else {
+            Ok(euid)
+        }
     }
 }
 
@@ -202,8 +206,12 @@ mod tests {
     #[test]
     fn decode_test() {
         assert_eq!(
-            Err(Error::InvalidCheckmod(127, 124)),
+            Err(Error::InvalidCheckmod(127, 0)),
             decode("C8EE0302R007HT3CH868ENZD8ZZ")
+        );
+        assert_eq!(
+            Err(Error::InvalidCheckmod(123, 56)),
+            decode("C8X2HA87098A0W837DX13FEAWVV")
         );
         assert_eq!(
             Err(Error::InvalidCharacter('U')),
