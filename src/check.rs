@@ -1,6 +1,6 @@
 use crate::EUID;
 
-#[cfg(not(feature = "euid_128"))]
+#[cfg(feature = "checkmod_64")]
 #[allow(dead_code)]
 fn shift_right7(v: (u64, u64)) -> (u64, u64) {
     let mask: u64 = 0x7f;
@@ -10,7 +10,7 @@ fn shift_right7(v: (u64, u64)) -> (u64, u64) {
     (a, b)
 }
 
-#[cfg(not(feature = "euid_128"))]
+#[cfg(feature = "checkmod_64")]
 #[allow(dead_code)]
 fn add_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
     let mut a1 = a.0;
@@ -36,14 +36,14 @@ fn add_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
     (sum1, sum2)
 }
 
-#[cfg(not(feature = "euid_128"))]
+#[cfg(feature = "checkmod_64")]
 #[allow(dead_code)]
 fn sub_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
     let (r1, r2) = add_u128((!b.0, !b.1), (0, 1));
     add_u128((a.0, a.1), (r1, r2))
 }
 
-#[cfg(not(feature = "euid_128"))]
+#[cfg(feature = "checkmod_64")]
 #[allow(dead_code)]
 fn is_gt_p(v: (u64, u64), p: u64) -> bool {
     if v.0 != 0 {
@@ -53,7 +53,7 @@ fn is_gt_p(v: (u64, u64), p: u64) -> bool {
     }
 }
 
-#[cfg(not(feature = "euid_128"))]
+#[cfg(feature = "checkmod_64")]
 #[allow(dead_code)]
 pub fn m7(euid: &EUID) -> usize {
     let p: u64 = 0x7f;
@@ -68,7 +68,7 @@ pub fn m7(euid: &EUID) -> usize {
     }
 }
 
-#[cfg(feature = "euid_128")]
+#[cfg(feature = "checkmod_128")]
 #[allow(dead_code)]
 pub fn m7(euid: &EUID) -> usize {
     let p: u128 = 0x7f;
@@ -87,16 +87,13 @@ pub fn m7(euid: &EUID) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        random::{random_u32, random_u64},
-        EUID,
-    };
+    use crate::{random::*, EUID};
 
     fn to_u128(hi: u64, lo: u64) -> u128 {
         ((hi as u128) << 64) | (lo as u128)
     }
 
-    #[cfg(not(feature = "euid_128"))]
+    #[cfg(feature = "checkmod_64")]
     #[test]
     fn add_u128_test() {
         for _ in 0..65535 {
@@ -114,7 +111,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(feature = "euid_128"))]
+    #[cfg(feature = "checkmod_64")]
     #[test]
     fn sub_u128_test() {
         for _ in 0..65535 {
@@ -132,7 +129,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(feature = "euid_128"))]
+    #[cfg(feature = "checkmod_64")]
     #[test]
     fn shift_right_test() {
         for _ in 0..65535 {
@@ -144,6 +141,19 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "checkmod_64")]
+    #[test]
+    fn divmod_test() {
+        for _ in 0..65535 {
+            let hi: u64 = random_u64() as u64;
+            let lo: u64 = random_u64() as u64;
+            let n = (to_u128(hi, lo) % 127) as usize;
+            let code = m7(&EUID(hi, lo));
+            assert_eq!(n, code);
+        }
+    }
+
+    #[cfg(feature = "checkmod_128")]
     #[test]
     fn divmod_test() {
         for _ in 0..65535 {

@@ -20,7 +20,9 @@ path = "src/lib.rs"
 edition = "2021"
 
 [features]
-euid_128 = []
+default  = ["checkmod_128"]
+checkmod_128 = []
+checkmod_64 = []
 
 [[bench]]
 name = "euid_create"
