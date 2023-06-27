@@ -115,7 +115,7 @@ fn to_u64_slice(slice: &[u5; 27]) -> (u64, u64) {
     (hi, lo)
 }
 
-pub fn encode(euid: &EUID) -> String {
+pub fn encode(euid: &EUID, checkmod: bool) -> String {
     let slice: [u5; 27] = to_u5_slice(euid.0, euid.1);
     let mut dst: [char; 27] = ['0'; 27];
     dst[0] = ENCODING_SYMBOLS[slice[0]];
@@ -143,7 +143,7 @@ pub fn encode(euid: &EUID) -> String {
     dst[22] = ENCODING_SYMBOLS[slice[22]];
     dst[23] = ENCODING_SYMBOLS[slice[23]];
     dst[24] = ENCODING_SYMBOLS[slice[24]];
-    let check: usize = check::m7(euid);
+    let check: usize = if checkmod { check::m7(euid) } else { 0x7f };
     dst[25] = ENCODING_SYMBOLS[slice[25] | (check >> 5)];
     dst[26] = ENCODING_SYMBOLS[check & 0x1f];
     String::from_iter(dst)
@@ -169,7 +169,7 @@ pub fn decode(encoded: &str) -> Result<EUID, Error> {
     let e: (u64, u64) = to_u64_slice(&slice);
     let check: usize = (r << 5) | slice[26];
     if check == 0x7f {
-        Err(Error::InvalidCheckmod(check, 0))
+        Ok(EUID(e.0, e.1))
     } else {
         let euid: EUID = EUID(e.0, e.1);
         let w = check::m7(&euid);
@@ -206,8 +206,8 @@ mod tests {
     #[test]
     fn decode_test() {
         assert_eq!(
-            Err(Error::InvalidCheckmod(127, 0)),
-            decode("C8EE0302R007HT3CH868ENZD8ZZ")
+            "C8ZM14GR4JXG0MQXVY18S8TJNBZ",
+            decode("C8ZM14GR4JXG0MQXVY18S8TJNBZ").unwrap().encode(false)
         );
         assert_eq!(
             Err(Error::InvalidCheckmod(123, 56)),

@@ -134,6 +134,10 @@ impl EUID {
         }
     }
 
+    pub fn encode(&self, checkmod: bool) -> String {
+        base32::encode(self, checkmod)
+    }
+
     fn get_ext_bit_len(ext: u16) -> u64 {
         let mut x: u16 = ext & 0x7fff;
         if x == 0 {
@@ -202,8 +206,7 @@ impl EUID {
 impl std::fmt::Display for EUID {
     /// Encode to lexicographically sortable string.
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let encoded: String = base32::encode(self);
-        write!(f, "{}", encoded)
+        write!(f, "{}", self.encode(true))
     }
 }
 
