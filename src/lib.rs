@@ -28,15 +28,14 @@ mod base32;
 mod check;
 mod random;
 
-/// Error enum:
-///
-/// Invalid length: EUID must have 27 character in size.
-/// Invalid character: EUID use a set of 10 digits and 22 letters, excluding 4 of the 26 letters: I L O U.
-/// Invalid checkmod: Invalid entry (typo).
+/// Error enum.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
+    /// EUID must have 27 character in size.
     InvalidLength(usize, usize),
+    /// EUID use a set of 10 digits and 22 letters, excluding 4 of the 26 letters: I L O U.
     InvalidCharacter(char),
+    /// Invalid entry (typo).
     InvalidCheckmod(usize, usize),
 }
 
