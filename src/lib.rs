@@ -20,10 +20,19 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+//! # EUID
+//! Reference implementation of EUID.
+//! 
+
 mod base32;
 mod check;
 mod random;
 
+/// Error enum:
+/// 
+/// Invalid length: EUID must have 27 character in size.
+/// Invalid character: EUID use a set of 10 digits and 22 letters, excluding 4 of the 26 letters: I L O U.
+/// Invalid checkmod: Invalid entry (typo).
 #[derive(Debug, PartialEq, Eq)]
 pub enum Error {
     InvalidLength(usize, usize),
@@ -31,31 +40,27 @@ pub enum Error {
     InvalidCheckmod(usize, usize),
 }
 
-/// EUID contains two main components header and randomness.
-/// The header store information about the ID and user-attached data (extension).
-/// Timestamps are included in the header to make EUID sortable,
-/// but the order isn't guaranteed if EUID is generated with the same milliseconds.
-/// We can provide some guarantee regarding sort order by incrementing randomness (at least significant bit) by 1.
-/// In case overflow happens when incrementing randomness, the generation should fail.
-///
+/// Extendable Universally Unique Identifier or EUID contains two main components: 
+/// header and random number.
+/// 
 /// Binary layout (Big Endian):
 /// ```text
-///        0               1               2               3
+/// 0               1               2               3
 /// 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/// |                       32_bit_uint_t_high                      |
+/// |                         Timestamp High                        |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/// | 10_bit_uint_t_low |   N Bit Random + Ext Data   |Ext Len| Ver |
+/// |   Timestamp Low   | N Bit Random + Ops Ext Data |Ext Len| Ver |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/// |                       32_bit_uint_random                      |
+/// |                             Random                            |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/// |                       32_bit_uint_random                      |
+/// |                             Random                            |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// ```
 #[derive(Default, Copy, Clone, Debug)]
 pub struct EUID(u64, u64);
 
-/// A Standard implementation of EUID (the naming convention should follow the language best practice).
+/// A Standard implementation of EUID.
 impl EUID {
     const EPOCH: u64 = 0x0;
 
@@ -72,6 +77,9 @@ impl EUID {
     /// use euid::EUID;
     ///
     /// let euid: EUID = EUID::create().unwrap_or_default();
+    /// println!("{}", euid); // with check-mod.
+    /// println!("{}", euid.encode(true)); // with check-mod.
+    /// println!("{}", euid.encode(false)); // without check-mod.
     /// ```
     pub fn create() -> Option<EUID> {
         let ts: u64 = EUID::get_timestamp_from_epoch(EUID::EPOCH);
@@ -85,7 +93,13 @@ impl EUID {
     /// ```rust
     /// use euid::EUID;
     ///
-    /// let euid: Option<EUID> = EUID::create_with_extension(1);
+    /// let euid: EUID = EUID::create_with_extension(1).unwrap_or_default();
+    /// println!("{}", euid); // with check-mod.
+    /// println!("{}", euid.encode(true)); // with check-mod.
+    /// println!("{}", euid.encode(false)); // without check-mod.
+    /// 
+    /// let overflowed_euid: Option<EUID> = EUID::create_with_extension(32768);
+    /// assert_eq!(None, overflowed_euid);
     /// ```
     pub fn create_with_extension(extension: u16) -> Option<EUID> {
         if extension > ((EUID::EXT_DATA_BITMASK) as u16) {
@@ -117,7 +131,7 @@ impl EUID {
 
     /// Derive monotonic EUID.
     ///
-    /// This function generate sortable EUID, None returns if overflow happens while incrementing randomness.
+    /// This function generate sortable EUID, None returns if overflow happens when incrementing randomness.
     pub fn next(&self) -> Option<EUID> {
         let timestamp: u64 = EUID::get_timestamp_from_epoch(EUID::EPOCH);
         if timestamp == self.timestamp() {
@@ -134,6 +148,16 @@ impl EUID {
         }
     }
 
+    /// Encode EUID to string Base-32 string.
+    /// 
+    /// Example:
+    /// ```rust
+    /// use euid::EUID;
+    ///
+    /// let euid: EUID = EUID::create().unwrap_or_default();
+    /// println!("{}", euid.encode(true)); // with check-mod.
+    /// println!("{}", euid.encode(false)); // without check-mod.
+    /// ```
     pub fn encode(&self, checkmod: bool) -> String {
         base32::encode(self, checkmod)
     }
