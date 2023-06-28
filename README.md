@@ -1,8 +1,8 @@
-# DRAFT#3
+# DRAFT#4
 
 ## Extendable Universally Unique Identifier
 
-Extendable Universally Unique Identifier or EUID contains two main components header and random number. The header store information about the ID and user-attached data (extension). Timestamps (milliseconds) are also included in the header to make EUID sortable, but the order is not guaranteed if EUID is generated with the same milliseconds. We can provide some guarantee regarding sort order by incrementing random number (64 bits at least significat bits). In case overflow happens when incrementing random number, the generation should fail.
+Extendable Universally Unique Identifier or EUID contains two main components: a header and a random number. The header stores information about the ID and user-attached data (extension). Timestamps (milliseconds) are also included in the header to make EUID sortable, but the order is not guaranteed if EUID is generated with the same milliseconds. We can provide some guarantee regarding sort order by incrementing random numbers (64 bits, at least significant bits). In case overflow happens when incrementing a random number, the generation should fail.
 
 Binary layout (Big Endian):
 ```text
@@ -22,17 +22,17 @@ Binary layout (Big Endian):
 
 ## Extension
 
-Extension is 15 bits of user-attached data (0-32767). If the data is less than 15 bits then the remaining bits are filled with random data.
+Extension is 15 bits of user-attached data (0-32767). If the data is less than 15 bits, then the remaining bits are filled with random data.
 
 
 ## Encoding/Decoding Symbols
 
-The encoding/decoding symbols use a set of 10 digits and 22 letters, excluding 4 of the 26 letters: I L O U.
+The encoding and decoding symbols use a set of 10 digits and 22 letters, excluding 4 of the 26 letters: I L O U.
 
 When decoding, upper and lower case letters are accepted, and i and l will be treated as 1 and o will be treated as 0. When encoding, only upper-case letters are used.
 
-The "check-mod symbols" are added to the last string for detecting transmission and entry errors early and inexpensively.
-The "check-mod symbol" encodes the number modulus 127. We can use the remaining bits and add one symbol (2 bits + 5 bits), so our final encoded ID is 27 character string.
+The "check-mod symbols" are added to the last string to detect transmission and entry errors early and inexpensively.
+The "check-mod symbol" encodes the number modulus 127. We can use the remaining bits and add one symbol (2 bits + 5 bits), so our final encoded ID is a 27-character string. If the check-mod value is set to 127, then there is no need to validate the check-mod when decoding.
 
 
 | Symbol Value | Decode Symbol | Encode Symbol |
@@ -72,7 +72,7 @@ The "check-mod symbol" encodes the number modulus 127. We can use the remaining 
 
 ## Monotonicity
 
-To guarantee a sortable ID, we split 64 bits of randomness (least significant bits) into two parts (high and low). The "high part" is incremented by 1, and the "low part" is a randomly generated number.
+To guarantee a sortable ID, we split 64 bits of randomness (the least significant bits) into two parts (high and low). The "high part" is incremented by 1, and the "low part" is a randomly generated number.
 
 
 ### Features
