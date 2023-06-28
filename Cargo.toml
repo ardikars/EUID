@@ -1,9 +1,10 @@
 [package]
 name = "euid"
 version = "0.1.0"
-edition = "2021"
 description = "Reference implementation for EUID"
+author = "Ardika Rommy Sanjaya <contact@ardikars.com>"
 license = "MIT"
+edition = "2021"
 homepage = "https://github.com/ardikars/euid"
 
 [dependencies]
@@ -23,6 +24,10 @@ edition = "2021"
 default  = ["checkmod_128"]
 checkmod_128 = []
 checkmod_64 = []
+
+[[bin]]
+name = "euid_toys"
+path = "examples/main.rs"
 
 [[bench]]
 name = "euid_create"
