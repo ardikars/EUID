@@ -22,14 +22,14 @@
 
 //! # EUID
 //! Reference implementation of EUID.
-//! 
+//!
 
 mod base32;
 mod check;
 mod random;
 
 /// Error enum:
-/// 
+///
 /// Invalid length: EUID must have 27 character in size.
 /// Invalid character: EUID use a set of 10 digits and 22 letters, excluding 4 of the 26 letters: I L O U.
 /// Invalid checkmod: Invalid entry (typo).
@@ -40,12 +40,12 @@ pub enum Error {
     InvalidCheckmod(usize, usize),
 }
 
-/// Extendable Universally Unique Identifier or EUID contains two main components: 
+/// Extendable Universally Unique Identifier or EUID contains two main components:
 /// header and random number.
-/// 
+///
 /// Binary layout (Big Endian):
 /// ```text
-/// 0               1               2               3
+///        0               1               2               3
 /// 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7 0 1 2 3 4 5 6 7
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// |                         Timestamp High                        |
@@ -97,7 +97,7 @@ impl EUID {
     /// println!("{}", euid); // with check-mod.
     /// println!("{}", euid.encode(true)); // with check-mod.
     /// println!("{}", euid.encode(false)); // without check-mod.
-    /// 
+    ///
     /// let overflowed_euid: Option<EUID> = EUID::create_with_extension(32768);
     /// assert_eq!(None, overflowed_euid);
     /// ```
@@ -149,7 +149,7 @@ impl EUID {
     }
 
     /// Encode EUID to string Base-32 string.
-    /// 
+    ///
     /// Example:
     /// ```rust
     /// use euid::EUID;
