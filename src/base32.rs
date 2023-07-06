@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+use std::iter::FromIterator;
+
 use crate::{check, Error, EUID};
 
 #[allow(non_camel_case_types)]

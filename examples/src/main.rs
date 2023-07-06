@@ -16,7 +16,7 @@ fn help() {
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() == 0 || args.len() == 1 {
-        help();        
+        help();
     } else if args.len() == 2 {
         if "create" == args[1] {
             println!("{}", EUID::create().unwrap_or_default());
@@ -25,7 +25,7 @@ fn main() {
         }
     } else if args.len() == 3 {
         let cmd = args[1].as_str().clone();
-        match cmd{
+        match cmd {
             "create_with_extension" => {
                 let ext_str = args[2].as_str().clone();
                 let ext = u16::from_str_radix(ext_str, 10);
@@ -36,12 +36,12 @@ fn main() {
                         } else {
                             println!("{}", EUID::create_with_extension(n).unwrap_or_default());
                         }
-                    },
+                    }
                     Err(err) => {
                         println!("{:?}", err);
                     }
                 }
-            },
+            }
             "create_batch" => {
                 let n_str = args[2].as_str().clone();
                 let n = u16::from_str_radix(n_str, 10);
@@ -53,38 +53,38 @@ fn main() {
                             euid = euid.next().unwrap_or_default();
                             println!("{}", euid);
                         }
-                    },
+                    }
                     Err(err) => {
                         println!("{:?}", err);
                     }
                 }
-            },
-            "from_string"=> {
+            }
+            "from_string" => {
                 let encoded = args[2].as_str().clone();
                 let euid = EUID::from_str(encoded);
                 match euid {
                     Ok(v) => {
                         println!("{}", v);
-                    },
+                    }
                     Err(err) => {
                         println!("{:?}", err);
                     }
                 }
-            },
-            "from"=> {
+            }
+            "from" => {
                 let encoded = args[2].as_str().clone();
                 let n = u128::from_str_radix(encoded, 10);
                 match n {
                     Ok(euid) => {
                         let v: EUID = EUID::from(euid);
                         println!("{}", v);
-                    },
+                    }
                     Err(err) => {
                         println!("{:?}", err);
                     }
                 }
-            },
-            _=> help(),
+            }
+            _ => help(),
         };
     } else if args.len() == 4 {
         if "create_with_extension_batch" == args[1] {
@@ -92,26 +92,27 @@ fn main() {
             let n = u16::from_str_radix(n_str, 10);
             match n {
                 Ok(v) => {
-                    let ext_str = args[2].as_str().clone();            
+                    let ext_str = args[2].as_str().clone();
                     let ext = u16::from_str_radix(ext_str, 10);
                     match ext {
                         Ok(n) => {
                             if n > 32767 {
                                 println!("{}", "extension overflow");
                             } else {
-                                let mut euid: EUID = EUID::create_with_extension(n).unwrap_or_default();
+                                let mut euid: EUID =
+                                    EUID::create_with_extension(n).unwrap_or_default();
                                 println!("{}", euid);
                                 for _ in 1..v {
                                     euid = euid.next().unwrap_or_default();
                                     println!("{}", euid);
                                 }
                             }
-                        },
+                        }
                         Err(err) => {
                             println!("{:?}", err);
                         }
                     }
-                },
+                }
                 Err(err) => {
                     println!("{:?}", err);
                 }
