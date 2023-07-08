@@ -20,8 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use std::iter::FromIterator;
-
 use crate::{check, Error, EUID};
 
 #[allow(non_camel_case_types)]
@@ -119,36 +117,36 @@ fn to_u64_slice(slice: &[u5; 27]) -> (u64, u64) {
 
 pub fn encode(euid: &EUID, checkmod: bool) -> String {
     let slice: [u5; 27] = to_u5_slice(euid.0, euid.1);
-    let mut dst: [char; 27] = ['0'; 27];
-    dst[0] = ENCODING_SYMBOLS[slice[0]];
-    dst[1] = ENCODING_SYMBOLS[slice[1]];
-    dst[2] = ENCODING_SYMBOLS[slice[2]];
-    dst[3] = ENCODING_SYMBOLS[slice[3]];
-    dst[4] = ENCODING_SYMBOLS[slice[4]];
-    dst[5] = ENCODING_SYMBOLS[slice[5]];
-    dst[6] = ENCODING_SYMBOLS[slice[6]];
-    dst[7] = ENCODING_SYMBOLS[slice[7]];
-    dst[8] = ENCODING_SYMBOLS[slice[8]];
-    dst[9] = ENCODING_SYMBOLS[slice[9]];
-    dst[10] = ENCODING_SYMBOLS[slice[10]];
-    dst[11] = ENCODING_SYMBOLS[slice[11]];
-    dst[12] = ENCODING_SYMBOLS[slice[12]];
-    dst[13] = ENCODING_SYMBOLS[slice[13]];
-    dst[14] = ENCODING_SYMBOLS[slice[14]];
-    dst[15] = ENCODING_SYMBOLS[slice[15]];
-    dst[16] = ENCODING_SYMBOLS[slice[16]];
-    dst[17] = ENCODING_SYMBOLS[slice[17]];
-    dst[18] = ENCODING_SYMBOLS[slice[18]];
-    dst[19] = ENCODING_SYMBOLS[slice[19]];
-    dst[20] = ENCODING_SYMBOLS[slice[20]];
-    dst[21] = ENCODING_SYMBOLS[slice[21]];
-    dst[22] = ENCODING_SYMBOLS[slice[22]];
-    dst[23] = ENCODING_SYMBOLS[slice[23]];
-    dst[24] = ENCODING_SYMBOLS[slice[24]];
+    let mut dst: String = String::with_capacity(27);
+    dst.push(ENCODING_SYMBOLS[slice[0]]);
+    dst.push(ENCODING_SYMBOLS[slice[1]]);
+    dst.push(ENCODING_SYMBOLS[slice[2]]);
+    dst.push(ENCODING_SYMBOLS[slice[3]]);
+    dst.push(ENCODING_SYMBOLS[slice[4]]);
+    dst.push(ENCODING_SYMBOLS[slice[5]]);
+    dst.push(ENCODING_SYMBOLS[slice[6]]);
+    dst.push(ENCODING_SYMBOLS[slice[7]]);
+    dst.push(ENCODING_SYMBOLS[slice[8]]);
+    dst.push(ENCODING_SYMBOLS[slice[9]]);
+    dst.push(ENCODING_SYMBOLS[slice[10]]);
+    dst.push(ENCODING_SYMBOLS[slice[11]]);
+    dst.push(ENCODING_SYMBOLS[slice[12]]);
+    dst.push(ENCODING_SYMBOLS[slice[13]]);
+    dst.push(ENCODING_SYMBOLS[slice[14]]);
+    dst.push(ENCODING_SYMBOLS[slice[15]]);
+    dst.push(ENCODING_SYMBOLS[slice[16]]);
+    dst.push(ENCODING_SYMBOLS[slice[17]]);
+    dst.push(ENCODING_SYMBOLS[slice[18]]);
+    dst.push(ENCODING_SYMBOLS[slice[19]]);
+    dst.push(ENCODING_SYMBOLS[slice[20]]);
+    dst.push(ENCODING_SYMBOLS[slice[21]]);
+    dst.push(ENCODING_SYMBOLS[slice[22]]);
+    dst.push(ENCODING_SYMBOLS[slice[23]]);
+    dst.push(ENCODING_SYMBOLS[slice[24]]);
     let check: usize = if checkmod { check::m7(euid) } else { 0x7f };
-    dst[25] = ENCODING_SYMBOLS[slice[25] | (check >> 5)];
-    dst[26] = ENCODING_SYMBOLS[check & 0x1f];
-    String::from_iter(dst)
+    dst.push(ENCODING_SYMBOLS[slice[25] | (check >> 5)]);
+    dst.push(ENCODING_SYMBOLS[check & 0x1f]);
+    dst
 }
 
 pub fn decode(encoded: &str) -> Result<EUID, Error> {

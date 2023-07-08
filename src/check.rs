@@ -22,7 +22,7 @@
 
 use crate::EUID;
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 fn shift_right7(v: (u64, u64)) -> (u64, u64) {
     let mask: u64 = 0x7f;
@@ -32,7 +32,7 @@ fn shift_right7(v: (u64, u64)) -> (u64, u64) {
     (a, b)
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 fn add_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
     let mut a1 = a.0;
@@ -58,14 +58,14 @@ fn add_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
     (sum1, sum2)
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 fn sub_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
     let (r1, r2) = add_u128((!b.0, !b.1), (0, 1));
     add_u128((a.0, a.1), (r1, r2))
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 fn is_gt_p(v: (u64, u64), p: u64) -> bool {
     if v.0 != 0 {
@@ -75,7 +75,7 @@ fn is_gt_p(v: (u64, u64), p: u64) -> bool {
     }
 }
 
-#[cfg(not(feature = "std"))]
+#[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 pub fn m7(euid: &EUID) -> usize {
     let p: u64 = 0x7f;
@@ -90,7 +90,7 @@ pub fn m7(euid: &EUID) -> usize {
     }
 }
 
-#[cfg(feature = "std")]
+#[cfg(all(feature = "std", not(feature = "euid_64")))]
 #[allow(dead_code)]
 pub fn m7(euid: &EUID) -> usize {
     let p: u128 = 0x7f;
@@ -115,7 +115,7 @@ mod tests {
         ((hi as u128) << 64) | (lo as u128)
     }
 
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "euid_64")]
     #[test]
     fn add_u128_test() {
         for _ in 0..65535 {
@@ -133,7 +133,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "euid_64")]
     #[test]
     fn sub_u128_test() {
         for _ in 0..65535 {
@@ -151,7 +151,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "euid_64")]
     #[test]
     fn shift_right_test() {
         for _ in 0..65535 {
@@ -163,7 +163,7 @@ mod tests {
         }
     }
 
-    #[cfg(not(feature = "std"))]
+    #[cfg(feature = "euid_64")]
     #[test]
     fn divmod_test() {
         for _ in 0..65535 {
@@ -175,7 +175,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "std")]
+    #[cfg(all(feature = "std", not(feature = "euid_64")))]
     #[test]
     fn divmod_test() {
         for _ in 0..65535 {

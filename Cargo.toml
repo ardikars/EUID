@@ -1,6 +1,6 @@
 [package]
 name = "euid"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2018"
 description = "Reference implementation for EUID"
 authors = ["Ardika Rommy Sanjaya <contact@ardikars.com>"]
@@ -28,6 +28,7 @@ edition = "2018"
 [features]
 default  = ["std"]
 std = []
+euid_64 = []
 
 [[bench]]
 name = "euid_create"

@@ -27,6 +27,7 @@
 mod base32;
 mod check;
 mod random;
+mod time;
 
 /// Error enum.
 #[derive(Debug, PartialEq, Eq)]
@@ -81,7 +82,7 @@ impl EUID {
     /// println!("{}", euid.encode(false)); // without check-mod.
     /// ```
     pub fn create() -> Option<EUID> {
-        let ts: u64 = EUID::get_timestamp_from_epoch(EUID::EPOCH);
+        let ts: u64 = time::get_timestamp_from_epoch(EUID::EPOCH);
         EUID::create_with_timestamp_and_extension(ts, 0)
     }
 
@@ -105,7 +106,7 @@ impl EUID {
             None
         } else {
             EUID::create_with_timestamp_and_extension(
-                EUID::get_timestamp_from_epoch(EUID::EPOCH),
+                time::get_timestamp_from_epoch(EUID::EPOCH),
                 extension,
             )
         }
@@ -132,7 +133,7 @@ impl EUID {
     ///
     /// This function generate sortable EUID, None returns if overflow happens when incrementing randomness.
     pub fn next(&self) -> Option<EUID> {
-        let timestamp: u64 = EUID::get_timestamp_from_epoch(EUID::EPOCH);
+        let timestamp: u64 = time::get_timestamp_from_epoch(EUID::EPOCH);
         if timestamp == self.timestamp() {
             let a: u64 = (self.1 >> 32) + 1;
             if a > u32::MAX as u64 {
@@ -161,6 +162,7 @@ impl EUID {
         base32::encode(self, checkmod)
     }
 
+    #[inline(always)]
     fn get_ext_bit_len(ext: u16) -> u64 {
         let mut x: u16 = ext & 0x7fff;
         if x == 0 {
@@ -183,27 +185,6 @@ impl EUID {
                 n += 1;
             }
             16 - n
-        }
-    }
-
-    fn normalize_timestamp(now: u64, epoch: u64) -> u64 {
-        if epoch < now {
-            now - epoch
-        } else {
-            now
-        }
-    }
-
-    fn get_timestamp_from_epoch(epoch: u64) -> u64 {
-        let duration: Result<std::time::Duration, std::time::SystemTimeError> =
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
-        match duration {
-            Ok(now) => {
-                let millis: u64 = now.as_millis() as u64;
-                let final_epoch: u64 = epoch & EUID::TIMESTAMP_BITMASK;
-                EUID::normalize_timestamp(millis, final_epoch)
-            }
-            Err(_) => 0,
         }
     }
 
@@ -303,7 +284,7 @@ mod tests {
 
     use rand::{seq::SliceRandom, thread_rng};
 
-    use crate::{random, Error, EUID};
+    use crate::{random, time, Error, EUID};
 
     fn get_timestamp_diff(start: u64, timestamp: u64) -> u64 {
         if start < timestamp {
@@ -325,12 +306,6 @@ mod tests {
     }
 
     #[test]
-    fn normalize_timestamp_test() {
-        assert_eq!(1, EUID::normalize_timestamp(1, 2));
-        assert_eq!(1, EUID::normalize_timestamp(2, 1));
-    }
-
-    #[test]
     fn get_timestamp_diff_test() {
         assert_eq!(1, get_timestamp_diff(1, 2));
         assert_eq!(1, get_timestamp_diff(2, 1));
@@ -341,7 +316,7 @@ mod tests {
         assert_eq!(None, EUID::create_with_timestamp_and_extension(u64::MAX, 0));
         for i in 0u32..65535 {
             let epoch: u64 = random::random_u32() as u64;
-            let ts: u64 = EUID::get_timestamp_from_epoch(epoch);
+            let ts: u64 = time::get_timestamp_from_epoch(epoch);
             let now: u64 = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
