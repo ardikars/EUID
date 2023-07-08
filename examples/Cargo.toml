@@ -1,13 +1,13 @@
 [package]
 name = "euid-toys"
-version = "0.1.0"
+version = "0.1.3"
 description = "Reference implementation for EUID"
 authors = ["Ardika Rommy Sanjaya <contact@ardikars.com>"]
 license = "MIT"
-edition = "2021"
+edition = "2023"
 homepage = "https://github.com/ardikars/euid"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-euid = "0.1.0"
+euid = "0.1.3"

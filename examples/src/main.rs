@@ -7,8 +7,8 @@ fn help() {
     println!("Examples:");
     println!("  euid_toys create");
     println!("  euid_toys create_with_extension 123");
-    println!("  euid_toys create_batch 10:");
-    println!("  euid_toys create_with_extension_batch 123 10:");
+    println!("  euid_toys create_batch 10");
+    println!("  euid_toys create_with_extension_batch 123 10");
     println!("  euid_toys from 123897324");
     println!("  euid_toys from_string C90FS3R3Z3J80V6BBZF0NM7SRKV");
 }
