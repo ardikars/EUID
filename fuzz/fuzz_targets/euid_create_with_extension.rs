@@ -32,5 +32,12 @@ fuzz_target!(|data: &[u8]| {
             break;
         }
     }
-    let _ = EUID::create_with_extension(u64::from_be_bytes(v) as u16);
+    let euid = EUID::create_with_extension(u64::from_be_bytes(v) as u16);
+    match euid {
+        Some(id) => {
+            assert!(id.extension().is_some());
+            assert!(id.timestamp() > 0);
+        },
+        None => {},
+    }
 });

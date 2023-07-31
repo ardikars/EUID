@@ -22,6 +22,7 @@
 
 use crate::EUID;
 
+// reference implementation for language that doesn't support 128 bit integer natively.
 #[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 fn shift_right7(v: (u64, u64)) -> (u64, u64) {
@@ -32,6 +33,7 @@ fn shift_right7(v: (u64, u64)) -> (u64, u64) {
     (a, b)
 }
 
+// reference implementation for language that doesn't support 128 bit integer natively.
 #[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 fn add_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
@@ -58,6 +60,7 @@ fn add_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
     (sum1, sum2)
 }
 
+// reference implementation for language that doesn't support 128 bit integer natively.
 #[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 fn sub_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
@@ -65,6 +68,7 @@ fn sub_u128(a: (u64, u64), b: (u64, u64)) -> (u64, u64) {
     add_u128((a.0, a.1), (r1, r2))
 }
 
+// reference implementation for language that doesn't support 128 bit integer natively.
 #[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 fn is_gt_p(v: (u64, u64), p: u64) -> bool {
@@ -75,6 +79,7 @@ fn is_gt_p(v: (u64, u64), p: u64) -> bool {
     }
 }
 
+// reference implementation for language that doesn't support 128 bit integer natively.
 #[cfg(feature = "euid_64")]
 #[allow(dead_code)]
 pub fn m7(euid: &EUID) -> usize {
@@ -108,8 +113,6 @@ pub fn m7(euid: &EUID) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::{random::*, EUID};
 
     fn to_u128(hi: u64, lo: u64) -> u128 {
         ((hi as u128) << 64) | (lo as u128)
@@ -119,15 +122,14 @@ mod tests {
     #[test]
     fn add_u128_test() {
         for _ in 0..65535 {
-            let hi_a: u64 = random_u32() as u64;
-            let lo_a: u64 = random_u64();
-            let hi_b: u64 = random_u64();
-            let lo_b: u64 = random_u64();
+            let (_, lo_a) = crate::random::random_u128();
+            let (hi_b, lo_b) = crate::random::random_u128();
+            let hi_a: u64 = crate::random::random_u32() as u64;
 
             let a: u128 = to_u128(hi_a, lo_a);
             let b: u128 = to_u128(hi_b, lo_b);
             let ab = a + b;
-            let (hi, lo) = add_u128((hi_a, lo_a), (hi_b, lo_b));
+            let (hi, lo) = crate::check::add_u128((hi_a, lo_a), (hi_b, lo_b));
             let c = to_u128(hi, lo);
             assert_eq!(ab, c);
         }
@@ -137,15 +139,14 @@ mod tests {
     #[test]
     fn sub_u128_test() {
         for _ in 0..65535 {
-            let hi_a: u64 = random_u64();
-            let lo_a: u64 = random_u64();
-            let hi_b: u64 = random_u32() as u64;
-            let lo_b: u64 = random_u64();
+            let (hi_a, lo_a) = crate::random::random_u128();
+            let (_, lo_b) = crate::random::random_u128();
+            let hi_b: u64 = crate::random::random_u32() as u64;
 
             let a: u128 = to_u128(hi_a, lo_a);
             let b: u128 = to_u128(hi_b, lo_b);
             let ab = a - b;
-            let (hi, lo) = sub_u128((hi_a, lo_a), (hi_b, lo_b));
+            let (hi, lo) = crate::check::sub_u128((hi_a, lo_a), (hi_b, lo_b));
             let c = to_u128(hi, lo);
             assert_eq!(ab, c);
         }
@@ -155,10 +156,9 @@ mod tests {
     #[test]
     fn shift_right_test() {
         for _ in 0..65535 {
-            let hi: u64 = random_u64();
-            let lo: u64 = random_u64();
+            let (hi, lo) = crate::random::random_u128();
             let n: u128 = to_u128(hi, lo);
-            let (l, r) = shift_right7((hi, lo));
+            let (l, r) = crate::check::shift_right7((hi, lo));
             assert_eq!(n >> 7, to_u128(l, r));
         }
     }
@@ -167,10 +167,9 @@ mod tests {
     #[test]
     fn divmod_test() {
         for _ in 0..65535 {
-            let hi: u64 = random_u64() as u64;
-            let lo: u64 = random_u64() as u64;
+            let (hi, lo) = crate::random::random_u128();
             let n = (to_u128(hi, lo) % 127) as usize;
-            let code = m7(&EUID(hi, lo));
+            let code = super::m7(&crate::EUID(hi, lo));
             assert_eq!(n, code);
         }
     }
@@ -179,10 +178,9 @@ mod tests {
     #[test]
     fn divmod_test() {
         for _ in 0..65535 {
-            let hi: u64 = random_u64() as u64;
-            let lo: u64 = random_u64() as u64;
+            let (hi, lo) = crate::random::random_u128();
             let n = (to_u128(hi, lo) % 127) as usize;
-            let code = m7(&EUID(hi, lo));
+            let code = super::m7(&crate::EUID(hi, lo));
             assert_eq!(n, code);
         }
     }

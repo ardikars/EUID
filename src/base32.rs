@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-use crate::{check, Error, EUID};
+use crate::{Error, EUID};
 
 #[allow(non_camel_case_types)]
 type u5 = usize;
@@ -143,7 +143,11 @@ pub fn encode(euid: &EUID, checkmod: bool) -> String {
     dst.push(ENCODING_SYMBOLS[slice[22]]);
     dst.push(ENCODING_SYMBOLS[slice[23]]);
     dst.push(ENCODING_SYMBOLS[slice[24]]);
-    let check: usize = if checkmod { check::m7(euid) } else { 0x7f };
+    let check: usize = if checkmod {
+        crate::check::m7(euid)
+    } else {
+        0x7f
+    };
     dst.push(ENCODING_SYMBOLS[slice[25] | (check >> 5)]);
     dst.push(ENCODING_SYMBOLS[check & 0x1f]);
     dst
@@ -172,7 +176,7 @@ pub fn decode(encoded: &str) -> Result<EUID, Error> {
         Ok(EUID(e.0, e.1))
     } else {
         let euid: EUID = EUID(e.0, e.1);
-        let w = check::m7(&euid);
+        let w = crate::check::m7(&euid);
         if check != w {
             Err(Error::InvalidCheckmod(check, w))
         } else {
@@ -184,20 +188,12 @@ pub fn decode(encoded: &str) -> Result<EUID, Error> {
 #[cfg(test)]
 mod tests {
 
-    use crate::{
-        base32::{to_u5_slice, to_u64_slice},
-        random, Error,
-    };
-
-    use super::decode;
-
     #[test]
     fn convert_bits_test() {
         for _ in 0..65536 {
-            let hi: u64 = random::random_u64();
-            let lo: u64 = random::random_u64();
-            let slice: [usize; 27] = to_u5_slice(hi, lo);
-            let (hi2, lo2) = to_u64_slice(&slice);
+            let (hi, lo) = crate::random::random_u128();
+            let slice: [usize; 27] = super::to_u5_slice(hi, lo);
+            let (hi2, lo2) = super::to_u64_slice(&slice);
             assert_eq!(hi, hi2);
             assert_eq!(lo, lo2);
         }
@@ -207,31 +203,35 @@ mod tests {
     fn decode_test() {
         assert_eq!(
             "C8ZM14GR4JXG0MQXVY18S8TJNBZ",
-            decode("C8ZM14GR4JXG0MQXVY18S8TJNBZ").unwrap().encode(false)
+            super::decode("C8ZM14GR4JXG0MQXVY18S8TJNBZ")
+                .unwrap()
+                .encode(false)
         );
         assert_eq!(
-            Err(Error::InvalidCheckmod(123, 56)),
-            decode("C8X2HA87098A0W837DX13FEAWVV")
+            Err(crate::Error::InvalidCheckmod(123, 56)),
+            super::decode("C8X2HA87098A0W837DX13FEAWVV")
         );
         assert_eq!(
-            Err(Error::InvalidCharacter('U')),
-            decode("C8EE934SR007G5Q94QKKXFRFV8U")
+            Err(crate::Error::InvalidCharacter('U')),
+            super::decode("C8EE934SR007G5Q94QKKXFRFV8U")
         );
         assert_eq!(
-            Err(Error::InvalidCharacter('}')),
-            decode("C8EE934SR007G5Q94QKKXFRFV8}")
+            Err(crate::Error::InvalidCharacter('}')),
+            super::decode("C8EE934SR007G5Q94QKKXFRFV8}")
         );
         assert_eq!(
-            Err(Error::InvalidCharacter('@')),
-            decode("C8EE934SR007G5Q94QKKXFRFV8@")
+            Err(crate::Error::InvalidCharacter('@')),
+            super::decode("C8EE934SR007G5Q94QKKXFRFV8@")
         );
         assert_eq!(
-            Err(Error::InvalidLength(26, 27)),
-            decode("C8EE934SR007G5Q94QKKXFRFV8")
+            Err(crate::Error::InvalidLength(26, 27)),
+            super::decode("C8EE934SR007G5Q94QKKXFRFV8")
         );
         assert_eq!(
             "C8EE934SR007G5Q94QKKXFRFV8B",
-            decode("C8EE934SR007G5Q94QKKXFRFV8B").unwrap().to_string()
+            super::decode("C8EE934SR007G5Q94QKKXFRFV8B")
+                .unwrap()
+                .to_string()
         );
     }
 }

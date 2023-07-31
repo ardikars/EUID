@@ -31,21 +31,23 @@ pub fn random_u32() -> u32 {
     }
 }
 
-pub fn random_u64() -> u64 {
-    let mut r: [u8; 8] = [0u8; 8];
+pub fn random_u128() -> (u64, u64) {
+    let mut r: [u8; 16] = [0u8; 16];
     match getrandom::getrandom(&mut r) {
-        Ok(_) => u64::from_be_bytes(r),
-        Err(_) => 0,
+        Ok(_) => {
+            let n: u128 = u128::from_be_bytes(r);
+            ((n >> 64) as u64, (n & 0xffffffffffffffff) as u64)
+        }
+        Err(_) => (0, 0),
     }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use crate::random::{random_u32, random_u64};
-
     #[test]
     fn random_test() {
-        assert!((random_u32() as u64) < random_u64());
+        assert!((super::random_u32() as u64) < super::random_u128().0);
+        assert!((super::random_u32() as u64) < super::random_u128().1);
     }
 }

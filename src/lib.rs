@@ -50,7 +50,7 @@ pub enum Error {
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// |                         Timestamp High                        |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-/// |   Timestamp Low   | N Bit Random + Ops Ext Data |Ext Len| Ver |
+/// |      Timestamp Low      | N Bit Random + Ops Ext Data |Ext Len|
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 /// |                             Random                            |
 /// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -62,15 +62,12 @@ pub struct EUID(u64, u64);
 
 /// A Standard implementation of EUID.
 impl EUID {
-    const EPOCH: u64 = 0x0;
-
-    const VERSION_1: u64 = 0x0;
-    const TIMESTAMP_BITMASK: u64 = 0x3ffffffffff;
-    const VERSION_BITMASK: u64 = 0x7;
+    const TIMESTAMP_BITMASK: u64 = 0x1fffffffffff;
     const EXT_LEN_BITMASK: u64 = 0xf;
     const EXT_DATA_BITMASK: u64 = 0x7fff;
 
     /// Create random EUID.
+    /// None will returns if the EUID is created after Friday, December 12, 3084 12:41:28.831 PM (UTC).
     ///
     /// Example:
     /// ```rust
@@ -82,12 +79,12 @@ impl EUID {
     /// println!("{}", euid.encode(false)); // without check-mod.
     /// ```
     pub fn create() -> Option<EUID> {
-        let ts: u64 = time::get_timestamp_from_epoch(EUID::EPOCH);
-        EUID::create_with_timestamp_and_extension(ts, 0)
+        EUID::create_with_timestamp(time::current_timestamp())
     }
 
     /// Create random EUID with attachable data (max 15 bit).
-    /// None will returns if the extenstion (user attached data) is more then 15 bits.
+    /// None will returns if the EUID is created after Friday, December 12, 3084 12:41:28.831 PM (UTC)
+    /// or the extenstion (user attached data) is more then 15 bits.
     ///
     /// Example:
     /// ```rust
@@ -105,46 +102,46 @@ impl EUID {
         if extension > ((EUID::EXT_DATA_BITMASK) as u16) {
             None
         } else {
-            EUID::create_with_timestamp_and_extension(
-                time::get_timestamp_from_epoch(EUID::EPOCH),
-                extension,
-            )
+            EUID::create_with_timestamp_and_extension(time::current_timestamp(), extension)
         }
     }
 
-    /// Returns EUID version number.
-    pub fn version(&self) -> u8 {
-        ((self.0 & EUID::VERSION_BITMASK) + 1) as u8
-    }
-
-    /// Returns user attached data (extension).
-    pub fn extension(&self) -> u16 {
-        let ext_len: u64 = (self.0 >> 3) & EUID::EXT_LEN_BITMASK;
-        let bitmask: u64 = (1 << ext_len) - 1;
-        ((self.0 >> 7) & bitmask) as u16
+    /// Returns user attached data (extension), or None if no attached data.
+    pub fn extension(&self) -> Option<u16> {
+        let ext_len: u64 = self.0 & EUID::EXT_LEN_BITMASK;
+        if ext_len == 0 {
+            None
+        } else {
+            let bitmask: u64 = (1 << ext_len) - 1;
+            Some(((self.0 >> 4) & bitmask) as u16)
+        }
     }
 
     /// Returns timestamp in milliseconds.
     pub fn timestamp(&self) -> u64 {
-        ((self.0 >> 22) & EUID::TIMESTAMP_BITMASK) + EUID::EPOCH
+        (self.0 >> 19) & EUID::TIMESTAMP_BITMASK
     }
 
     /// Derive monotonic EUID.
     ///
     /// This function generate sortable EUID, None returns if overflow happens when incrementing randomness.
     pub fn next(&self) -> Option<EUID> {
-        let timestamp: u64 = time::get_timestamp_from_epoch(EUID::EPOCH);
+        let timestamp: u64 = time::current_timestamp();
         if timestamp == self.timestamp() {
-            let a: u64 = (self.1 >> 32) + 1;
-            if a > u32::MAX as u64 {
+            let r_hi = self.1 >> 32;
+            if r_hi == 0xffffffff {
                 None
             } else {
-                let b: u64 = random::random_u32() as u64;
-                let c: u64 = (a << 32) | b;
-                Some(EUID(self.0, c))
+                Some(EUID(
+                    self.0,
+                    ((r_hi + 1) << 32) | random::random_u32() as u64,
+                ))
             }
         } else {
-            EUID::create_with_timestamp_and_extension(timestamp, self.extension())
+            match self.extension() {
+                Some(ext) => EUID::create_with_timestamp_and_extension(timestamp, ext),
+                None => EUID::create_with_timestamp(timestamp),
+            }
         }
     }
 
@@ -165,26 +162,32 @@ impl EUID {
     #[inline(always)]
     fn get_ext_bit_len(ext: u16) -> u64 {
         let mut x: u16 = ext & 0x7fff;
-        if x == 0 {
-            0
+        let mut n: u64 = 0;
+        if x <= 0x00ff {
+            n += 8;
+            x <<= 8;
+        }
+        if x <= 0x0fff {
+            n += 4;
+            x <<= 4;
+        }
+        if x <= 0x3fff {
+            n += 2;
+            x <<= 2;
+        }
+        if x <= 0x7fff {
+            n += 1;
+        }
+        16 - n
+    }
+
+    #[inline(always)]
+    fn create_with_timestamp(timestamp: u64) -> Option<EUID> {
+        if timestamp > EUID::TIMESTAMP_BITMASK {
+            None
         } else {
-            let mut n: u64 = 0;
-            if x <= 0x00ff {
-                n += 8;
-                x <<= 8;
-            }
-            if x <= 0x0fff {
-                n += 4;
-                x <<= 4;
-            }
-            if x <= 0x3fff {
-                n += 2;
-                x <<= 2;
-            }
-            if x <= 0x7fff {
-                n += 1;
-            }
-            16 - n
+            let (r0, r1) = random::random_u128();
+            Some(EUID((timestamp << 19) | ((r0 & 0x7fff) << 4), r1))
         }
     }
 
@@ -193,16 +196,17 @@ impl EUID {
         if timestamp > EUID::TIMESTAMP_BITMASK {
             None
         } else {
-            let version: u64 = EUID::VERSION_1 & EUID::VERSION_BITMASK;
-            let ext_len: u64 = EUID::get_ext_bit_len(extension);
-            let ext_data: u64 = (extension as u64) & EUID::EXT_DATA_BITMASK;
-            let remain_rand: u64 = (random::random_u32() & ((1 << (15 - ext_len)) - 1)) as u64;
-            let hi: u64 = (timestamp << 22)
-                | (remain_rand << (7 + ext_len))
-                | (ext_data << 7)
-                | ext_len << 3
-                | version;
-            Some(EUID(hi, random::random_u64()))
+            let ext_data: u64 = extension as u64;
+            if ext_data > EUID::EXT_DATA_BITMASK {
+                None
+            } else {
+                let ext_len: u64 = EUID::get_ext_bit_len(extension);
+                let (r0, r1) = random::random_u128();
+                let remain_rand: u64 = r0 & ((1 << (15 - ext_len)) - 1);
+                let hi: u64 =
+                    (timestamp << 19) | (remain_rand << (4 + ext_len)) | (ext_data << 4) | ext_len;
+                Some(EUID(hi, r1))
+            }
         }
     }
 }
@@ -277,14 +281,9 @@ impl PartialOrd for EUID {
 #[cfg(test)]
 mod tests {
 
-    use std::{
-        str::FromStr,
-        time::{SystemTime, UNIX_EPOCH},
-    };
+    use std::str::FromStr;
 
     use rand::{seq::SliceRandom, thread_rng};
-
-    use crate::{random, time, Error, EUID};
 
     fn get_timestamp_diff(start: u64, timestamp: u64) -> u64 {
         if start < timestamp {
@@ -296,13 +295,13 @@ mod tests {
 
     fn get_ext_bit_len0(v: u16) -> u64 {
         let mut i: i32 = 14;
-        while i >= 0 {
+        while i > 0 {
             if (v >> i) != 0 {
                 return (i as u64) + 1;
             }
             i -= 1;
         }
-        return 0;
+        1
     }
 
     #[test]
@@ -311,27 +310,66 @@ mod tests {
         assert_eq!(1, get_timestamp_diff(2, 1));
     }
 
+    fn normalize_timestamp(now: u64, epoch: u64) -> u64 {
+        if epoch < now {
+            now - epoch
+        } else {
+            now
+        }
+    }
+
+    fn get_timestamp_from_epoch(epoch: u64) -> u64 {
+        let duration: Result<std::time::Duration, std::time::SystemTimeError> =
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH);
+        match duration {
+            Ok(now) => {
+                let millis: u64 = now.as_millis() as u64;
+                let final_epoch: u64 = epoch & 0x3ffffffffff;
+                normalize_timestamp(millis, final_epoch)
+            }
+            Err(_) => 0,
+        }
+    }
+
     #[test]
     fn create_with_timestamp_and_extension_test() {
-        assert_eq!(None, EUID::create_with_timestamp_and_extension(u64::MAX, 0));
+        assert_eq!(
+            None,
+            crate::EUID::create_with_timestamp_and_extension(u64::MAX, 0)
+        );
+        assert_eq!(
+            None,
+            crate::EUID::create_with_timestamp_and_extension(
+                crate::time::current_timestamp(),
+                (crate::EUID::EXT_DATA_BITMASK + 1) as u16
+            )
+        );
         for i in 0u32..65535 {
-            let epoch: u64 = random::random_u32() as u64;
-            let ts: u64 = time::get_timestamp_from_epoch(epoch);
+            let epoch: u64 = crate::random::random_u32() as u64;
+            let ts: u64 = get_timestamp_from_epoch(epoch);
             let now: u64 = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_millis() as u64;
-            let euid: EUID = EUID::create_with_timestamp_and_extension(ts, i as u16).unwrap();
+            let euid = crate::EUID::create_with_timestamp_and_extension(
+                ts,
+                ((i as u64) & crate::EUID::EXT_DATA_BITMASK) as u16,
+            )
+            .unwrap();
             let timestamp: u64 = euid.timestamp();
-            assert!(timestamp <= EUID::TIMESTAMP_BITMASK);
+            assert!(timestamp <= crate::EUID::TIMESTAMP_BITMASK);
             let t: u64 = now - epoch;
             let diff: u64 = get_timestamp_diff(t, timestamp);
             assert!(diff < 50);
-            assert_eq!((i as u64 & EUID::EXT_DATA_BITMASK) as u16, euid.extension());
-            assert!(euid.extension() as u64 <= EUID::EXT_DATA_BITMASK);
-            assert!(EUID::get_ext_bit_len(euid.extension()) <= EUID::EXT_LEN_BITMASK);
-            assert_eq!(1, euid.version());
-            assert!((euid.version() - 1) as u64 <= EUID::VERSION_BITMASK);
+            assert_eq!(
+                (i as u64 & crate::EUID::EXT_DATA_BITMASK) as u16,
+                euid.extension().unwrap()
+            );
+            assert!(euid.extension().unwrap() as u64 <= crate::EUID::EXT_DATA_BITMASK);
+            assert!(
+                crate::EUID::get_ext_bit_len(euid.extension().unwrap())
+                    <= crate::EUID::EXT_LEN_BITMASK
+            );
         }
     }
 
@@ -339,93 +377,97 @@ mod tests {
     fn get_ext_bit_len_test() {
         let max: u16 = 1 << 15;
         for i in 0..max {
-            assert_eq!(EUID::get_ext_bit_len(i), get_ext_bit_len0(i));
+            assert_eq!(crate::EUID::get_ext_bit_len(i), get_ext_bit_len0(i));
         }
     }
 
     #[test]
     fn create_test() {
-        let now: u64 = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
+        let now: u64 = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
             .as_millis() as u64;
-        let euid: EUID = EUID::create().unwrap_or_default();
+        let euid: crate::EUID = crate::EUID::create().unwrap_or_default();
         let timestamp: u64 = euid.timestamp();
         let diff: u64 = get_timestamp_diff(now, timestamp);
         assert!(diff < 50);
-        assert_eq!(0, euid.extension());
-        assert_eq!(1, euid.version());
+        assert_eq!(None, euid.extension());
     }
 
     #[test]
     fn create_with_extension_test() {
-        for i in 0u32..0x7fff {
-            let now: u64 = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
+        for i in 0u64..crate::EUID::EXT_DATA_BITMASK {
+            let now: u64 = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
                 .as_millis() as u64;
-            let euid: EUID = EUID::create_with_extension(i as u16).unwrap();
+            let euid: crate::EUID = crate::EUID::create_with_extension(i as u16).unwrap();
             let timestamp: u64 = euid.timestamp();
             let diff: u64 = get_timestamp_diff(now, timestamp);
             assert!(diff < 50);
-            assert_eq!((i as u16 & 0x7fff), euid.extension());
-            assert_eq!(1, euid.version());
+            assert_eq!(i, euid.extension().unwrap() as u64);
         }
-        assert_eq!(None, EUID::create_with_extension(0x7fff + 1));
+        assert_eq!(
+            None,
+            crate::EUID::create_with_extension(crate::EUID::EXT_DATA_BITMASK as u16 + 1)
+        );
     }
 
     #[test]
     fn conversion_test() {
-        for i in 0..0x7fff {
-            let euid: EUID = EUID::create_with_extension(i as u16).unwrap();
+        for i in 0..crate::EUID::EXT_DATA_BITMASK {
+            let euid: crate::EUID = crate::EUID::create_with_extension(i as u16).unwrap();
             let encoded: String = euid.to_string();
             assert_eq!(27, encoded.len());
-            let decoded: EUID = EUID::from_str(&encoded).unwrap();
+            let decoded: crate::EUID = crate::EUID::from_str(&encoded).unwrap();
             assert_eq!(euid, decoded);
             let e128: u128 = euid.into();
-            assert_eq!(EUID::from(e128), euid);
-            assert_eq!(std::cmp::Ordering::Equal, EUID::from(e128).cmp(&euid));
+            assert_eq!(crate::EUID::from(e128), euid);
+            assert_eq!(
+                std::cmp::Ordering::Equal,
+                crate::EUID::from(e128).cmp(&euid)
+            );
             assert_eq!(euid, euid.clone());
-            let euid_copy: EUID = euid;
+            let euid_copy: crate::EUID = euid;
             assert_eq!(euid, euid_copy);
-            let euidx: EUID = e128.into();
+            let euidx: crate::EUID = e128.into();
             assert_eq!(euid, euidx);
             let x: u128 = u128::from(euid);
             assert_eq!(x, e128);
         }
-        assert_eq!(None, EUID::create_with_extension(0x7fff + 1));
+        assert_eq!(None, crate::EUID::create_with_extension(0x7fff + 1));
         assert_eq!(
-            Err(Error::InvalidLength(25, 27)),
-            EUID::from_str("C8754X9NN8H80X298KRKERG8K")
+            Err(crate::Error::InvalidLength(25, 27)),
+            crate::EUID::from_str("C8754X9NN8H80X298KRKERG8K")
         );
         assert_eq!(
-            Err(Error::InvalidLength(28, 27)),
-            EUID::from_str("C8754X9NN8H80X298KRKERG8K888")
+            Err(crate::Error::InvalidLength(28, 27)),
+            crate::EUID::from_str("C8754X9NN8H80X298KRKERG8K888")
         );
         assert_eq!(
-            Err(Error::InvalidCharacter('U')),
-            EUID::from_str("C8754X9NN8H80X298KRKERG8KU8")
+            Err(crate::Error::InvalidCharacter('U')),
+            crate::EUID::from_str("C8754X9NN8H80X298KRKERG8KU8")
         );
     }
 
     #[test]
     fn monotonic_test() {
-        let hi: u64 = EUID::create().unwrap().0;
-        let euid: EUID = EUID(hi, u64::MAX);
+        let hi: u64 = crate::EUID::create().unwrap().0;
+        let euid: crate::EUID = crate::EUID(hi, u64::MAX);
         assert_eq!(None, euid.next());
 
-        let mut euids: Vec<EUID> = Vec::<EUID>::new();
+        let mut euids: Vec<crate::EUID> = Vec::<crate::EUID>::new();
         for i in 0usize..0x7fff {
             if i == 0 {
-                euids.push(EUID::create_with_extension(i as u16).unwrap());
+                euids.push(crate::EUID::create_with_extension(i as u16).unwrap());
             } else {
                 euids.push(euids[i - 1].next().unwrap())
             }
         }
-        assert_eq!(None, EUID::create_with_extension(0x7fff + 1));
-        let mut unordered: Vec<EUID> = euids.clone();
+        assert_eq!(None, crate::EUID::create_with_extension(0x7fff + 1));
+        let mut unordered: Vec<crate::EUID> = euids.clone();
         unordered.shuffle(&mut thread_rng());
-        let mut ordered: Vec<EUID> = unordered.clone();
+        let mut ordered: Vec<crate::EUID> = unordered.clone();
         ordered.sort();
         for i in 0..euids.len() {
             assert_eq!(euids[i], ordered[i]);
@@ -435,7 +477,7 @@ mod tests {
 
     #[test]
     fn print_test() {
-        let euid: EUID = EUID::create().unwrap_or_default();
+        let euid: crate::EUID = crate::EUID::create().unwrap_or_default();
         println!("{}", euid.to_string());
         println!("{:?}", euid.to_string());
     }
