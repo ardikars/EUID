@@ -6,7 +6,7 @@ EUID (Extendable Universally Unique Identifier) is a unique identifier designed 
 
 ### Timestamps and Randomness
 
-EUIDs include Unix timestamps with precision down to the millisecond level (applicable until the year 3084 AD) to facilitate sortability. However, when generated with the same milliseconds, their order is not guaranteed. To address this, 64 bits of randomness are split into two parts: the "high," which is incremented by 1, and the "low," which receives randomly generated data. This process ensures a predictable sorting order.
+EUIDs include Unix timestamps with precision down to the millisecond level (applicable until the year 3084 AD) to facilitate sortability. However, when generated with the same milliseconds, their order is not guaranteed. To address this, 64 bits of randomness are split into two parts: the "high" which is incremented by 1, and the "low" which receives randomly generated data. This process ensures a predictable sorting order.
 
 ### The Extension
 
@@ -76,7 +76,7 @@ EUIDs use a set of 10 digits and 22 letters for encoding and decoding, excluding
 * Extendability: EUIDs provide the capability to append up to 15 bits of user-defined data, enhancing their versatility.
 * Canonical Encoding: EUIDs follow a canonical encoding format, resulting in a standardized 27-character string representation.
 * Case Insensitivity: EUID decoding is case-insensitive, ensuring consistent interpretation.
-* Typographical and Error Detection: EUIDs utilize a Check-Mod mechanism to detect typographical and transmission errors.
+* Error Detection: EUIDs utilize a Check-Mod mechanism to detect typographical and transmission errors.
 
 ### Reference implementation
 
