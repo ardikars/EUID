@@ -6,7 +6,7 @@ EUID (Extendable Universally Unique Identifier) is a unique identifier designed 
 
 ### Timestamps and Randomness
 
-EUIDs include timestamps with precision down to the millisecond level to facilitate sortability. However, when generated with the same milliseconds, their order is not guaranteed. To address this, 64 bits of randomness are split into two parts: the "high" which is incremented by 1, and the "low" which receives randomly generated data. This process ensures a predictable sorting order.
+EUIDs include Unix timestamps with precision down to the millisecond level (applicable until the year 3084 AD) to facilitate sortability. However, when generated with the same milliseconds, their order is not guaranteed. To address this, 64 bits of randomness are split into two parts: the "high," which is incremented by 1, and the "low," which receives randomly generated data. This process ensures a predictable sorting order.
 
 ### The Extension
 
@@ -15,6 +15,41 @@ EUIDs incorporate an extension feature that allows for the attachment of 15 bits
 ### Encoding, Decoding and Check-Mod Symbols For Error Detection
 
 EUIDs use a set of 10 digits and 22 letters for encoding and decoding, excluding four letters (I, L, O, U) from the set of 26. During decoding, EUIDs accept both uppercase and lowercase letters, treating 'i' and 'l' as 1, and 'o' as 0. However, during encoding, only uppercase letters are utilized to ensure consistency. To detect transmission and entry errors inexpensively, check-mod symbols are added to the last string of EUIDs. These symbols encode the number modulus 127, allowing for early error detection. By utilizing the remaining bits and adding one symbol (2 bits + 5 bits), the final encoded ID becomes a 27-character string. A check-mod value of 127 eliminates the need for check-mod validation during decoding.
+
+| Symbol Value | Decode Symbol | Encode Symbol |
+|--------------|---------------|---------------|
+| 0 | `0` `O` `o` | `0` |
+| 1 | `1` `I` `i` `L` `l` | `1` |
+| 2 | `2` | `2` |
+| 3 | `3` | `3` |
+| 4 | `4` | `4` |
+| 5 | `5` | `5` |
+| 6 | `6` | `6` |
+| 7 | `7` | `7` |
+| 8 | `8` | `8` |
+| 9 | `9` | `9` |
+| 10 | `A` `a` | `A` |
+| 11 | `B` `b` | `B` |
+| 12 | `C` `c` | `C` |
+| 13 | `D` `d` | `D` |
+| 14 | `E` `e` | `E` |
+| 15 | `F` `f` | `F` |
+| 16 | `G` `g` | `G` |
+| 17 | `H` `h` | `H` |
+| 18 | `J` `j` | `J` |
+| 19 | `K` `k` | `K` |
+| 20 | `M` `m` | `M` |
+| 21 | `N` `n` | `N` |
+| 22 | `P` `p` | `P` |
+| 23 | `Q` `q` | `Q` |
+| 24 | `R` `r` | `R` |
+| 25 | `S` `s` | `S` |
+| 26 | `T` `t` | `T` |
+| 27 | `V` `v` | `V` |
+| 28 | `W` `w` | `W` |
+| 29 | `X` `x` | `X` |
+| 30 | `Y` `y` | `Y` |
+| 31 | `Z` `z` | `Z` |
 
 
 ### Binary layout (Big Endian):
@@ -32,6 +67,16 @@ EUIDs use a set of 10 digits and 22 letters for encoding and decoding, excluding
  |                             Random                            |
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
+
+### Features
+
+* 128 bits ID
+* Human readable and URL Safe
+* Lexicographically sortable (optionaly monotonic, handles the same millisecond)
+* Extendable (can attach up to 15 bits user data)
+* Canonically encoded as a 27 character string
+* Case insensitive (Decoding)
+* Typo/Error detection (Check-Mod)
 
 ### Reference implementation
 
