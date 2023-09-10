@@ -68,21 +68,21 @@ EUIDs use a set of 10 digits and 22 letters for encoding and decoding, excluding
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 ```
 
-### Features
+### Key Attributes of EUIDs
 
-* 128 bits ID
-* Human readable and URL Safe
-* Lexicographically sortable (optionaly monotonic, handles the same millisecond)
-* Extendable (can attach up to 15 bits user data)
-* Canonically encoded as a 27 character string
-* Case insensitive (Decoding)
-* Typo/Error detection (Check-Mod)
+* Compactness: EUIDs are designed with a 128-bit format, optimizing space utilization.
+* Human Readability and URL Safety: EUIDs are intentionally crafted for human readability and are secure for use in URLs.
+* Lexicographic Sortability: EUIDs facilitate lexicographic sorting, with the option to support monotonically increasing IDs when generated within the same millisecond.
+* Extendability: EUIDs provide the capability to append up to 15 bits of user-defined data, enhancing their versatility.
+* Canonical Encoding: EUIDs follow a canonical encoding format, resulting in a standardized 27-character string representation.
+* Case Insensitivity: EUID decoding is case-insensitive, ensuring consistent interpretation.
+* Typographical and Error Detection: EUIDs utilize a Check-Mod mechanism to detect typographical and transmission errors.
 
 ### Reference implementation
 
 Reference implementation is in `src` directory.
 
-### Inspired by
+### References
 
 * [UUID](https://www.ietf.org/rfc/rfc4122.txt)
 * [ULID](https://github.com/ulid/spec)
