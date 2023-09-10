@@ -12,7 +12,7 @@ EUIDs include Unix timestamps with precision down to the millisecond level (appl
 
 EUIDs incorporate an extension feature that allows for the attachment of 15 bits of data (ranging from 0 to 32767). If the attached data occupies less than 15 bits, the remaining bits are filled with randomly generated data. The extension is optional, and when no data needs to be attached, the extension length is set to 0. However, if data attachment is required, the extension length must match the size of the appended data in bits.
 
-### Encoding, Decoding and Check-Mod Symbols For Error Detection
+### Encoding, Decoding and Check-Mod Symbols for Error Detection
 
 EUIDs use a set of 10 digits and 22 letters for encoding and decoding, excluding four letters (I, L, O, U) from the set of 26. During decoding, EUIDs accept both uppercase and lowercase letters, treating 'i' and 'l' as 1, and 'o' as 0. However, during encoding, only uppercase letters are utilized to ensure consistency. To detect transmission and entry errors inexpensively, check-mod symbols are added to the last string of EUIDs. These symbols encode the number modulus 127, allowing for early error detection. By utilizing the remaining bits and adding one symbol (2 bits + 5 bits), the final encoded ID becomes a 27-character string. A check-mod value of 127 eliminates the need for check-mod validation during decoding.
 
