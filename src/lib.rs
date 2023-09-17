@@ -478,7 +478,6 @@ mod tests {
     #[test]
     fn print_test() {
         let euid: crate::EUID = crate::EUID::create().unwrap_or_default();
-        println!("{}", euid.to_string());
-        println!("{:?}", euid.to_string());
+        println!("{:?}\n{}", euid, euid);
     }
 }

@@ -30,6 +30,8 @@ default  = ["std"]
 std = []
 # reference implementation for language that doesn't support 128 bit integer natively.
 euid_64 = []
+# reference implementation for non binary base32 encoding
+non_binary = []
 
 [[bench]]
 name = "euid_create"

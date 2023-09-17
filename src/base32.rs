@@ -53,6 +53,7 @@ static DECODING_SYMBOLS: &[u5] = &[
     29, 30, 31, // 120
 ];
 
+#[cfg(not(feature = "non_binary"))]
 fn to_u5_slice(hi: u64, lo: u64) -> [u5; 27] {
     let mut dst: [u5; 27] = [0usize; 27];
     dst[0] = ((hi >> 59) & 0x1f) as u5;
@@ -85,6 +86,7 @@ fn to_u5_slice(hi: u64, lo: u64) -> [u5; 27] {
     dst
 }
 
+#[cfg(not(feature = "non_binary"))]
 fn to_u64_slice(slice: &[u5; 27]) -> (u64, u64) {
     let hi: u64 = ((slice[0] as u64) << 59)
         | ((slice[1] as u64) << 54)
@@ -115,6 +117,46 @@ fn to_u64_slice(slice: &[u5; 27]) -> (u64, u64) {
     (hi, lo)
 }
 
+#[cfg(feature = "non_binary")]
+pub fn encode(euid: &EUID, checkmod: bool) -> String {
+    let check = (if checkmod {
+        crate::check::m7(euid)
+    } else {
+        0x7f
+    }) as u128;
+
+    let mut p1 = euid.0 >> 19;
+    let mut p2 = ((euid.0 & 0x7ffff) << 1) | (euid.1 >> 63);
+    let mut p3 = (((euid.1 as u128) & 0x7fffffffffffffff) << 7) | check;
+
+    let mut p1_str: [char; 9] = ['0'; 9];
+    let mut p2_str: [char; 4] = ['0'; 4];
+    let mut p3_str: [char; 14] = ['0'; 14];
+
+    for (_, c) in p1_str.iter_mut().enumerate() {
+        let m = p1 % 32;
+        *c = ENCODING_SYMBOLS[m as usize];
+        p1 = (p1 - m) / 32;
+    }
+    for (_, c) in p2_str.iter_mut().enumerate() {
+        let m = p2 % 32;
+        *c = ENCODING_SYMBOLS[m as usize];
+        p2 = (p2 - m) / 32;
+    }
+    for (_, c) in p3_str.iter_mut().enumerate() {
+        let mr = p3 % 32;
+        *c = ENCODING_SYMBOLS[mr as usize];
+        p3 = (p3 - mr) / 32;
+    }
+    format!(
+        "{}{}{}",
+        p1_str.iter().rev().collect::<String>(),
+        p2_str.iter().rev().collect::<String>(),
+        p3_str.iter().rev().collect::<String>(),
+    )
+}
+
+#[cfg(not(feature = "non_binary"))]
 pub fn encode(euid: &EUID, checkmod: bool) -> String {
     let slice: [u5; 27] = to_u5_slice(euid.0, euid.1);
     let mut dst: String = String::with_capacity(27);
@@ -153,6 +195,69 @@ pub fn encode(euid: &EUID, checkmod: bool) -> String {
     dst
 }
 
+#[cfg(feature = "non_binary")]
+pub fn decode(encoded: &str) -> Result<EUID, Error> {
+    if encoded.len() != 27 {
+        return Err(Error::InvalidLength(encoded.len(), 27));
+    }
+    let mut p1: u64 = 0;
+    let mut p2: u64 = 0;
+    let mut p3: u128 = 0;
+
+    let (value, rest) = encoded.split_at(9);
+    for (i, c) in value.chars().rev().enumerate() {
+        let code_point = c as usize;
+        if code_point > DECODING_SYMBOLS.len() {
+            return Err(Error::InvalidCharacter(c));
+        }
+        let v = DECODING_SYMBOLS[c as usize];
+        if v == usize::MAX {
+            return Err(Error::InvalidCharacter(c));
+        }
+        p1 += v as u64 * (32u64.pow(i as u32));
+    }
+    let (value, rest) = rest.split_at(4);
+    for (i, c) in value.chars().rev().enumerate() {
+        let code_point = c as usize;
+        if code_point > DECODING_SYMBOLS.len() {
+            return Err(Error::InvalidCharacter(c));
+        }
+        let v = DECODING_SYMBOLS[c as usize];
+        if v == usize::MAX {
+            return Err(Error::InvalidCharacter(c));
+        }
+        p2 += v as u64 * (32u64.pow(i as u32));
+    }
+    let (value, _) = rest.split_at(14);
+    for (i, c) in value.chars().rev().enumerate() {
+        let code_point = c as usize;
+        if code_point > DECODING_SYMBOLS.len() {
+            return Err(Error::InvalidCharacter(c));
+        }
+        let v = DECODING_SYMBOLS[c as usize];
+        if v == usize::MAX {
+            return Err(Error::InvalidCharacter(c));
+        }
+        p3 += v as u128 * (32u128.pow(i as u32));
+    }
+    let check = (p3 & 0x7f) as usize;
+
+    let hi = (p1 << 19) | (p2 >> 1);
+    let lo = ((p2 & 0x1) << 63) | ((p3 >> 7) & 0x7fffffffffffffff) as u64;
+    let euid = EUID(hi, lo);
+    if check == 0x7f {
+        Ok(euid)
+    } else {
+        let w = crate::check::m7(&euid);
+        if w == check {
+            Ok(euid)
+        } else {
+            Err(Error::InvalidCheckmod(check, w))
+        }
+    }
+}
+
+#[cfg(not(feature = "non_binary"))]
 pub fn decode(encoded: &str) -> Result<EUID, Error> {
     if encoded.len() != 27 {
         return Err(Error::InvalidLength(encoded.len(), 27));
@@ -188,6 +293,9 @@ pub fn decode(encoded: &str) -> Result<EUID, Error> {
 #[cfg(test)]
 mod tests {
 
+    use std::str::FromStr;
+
+    #[cfg(not(feature = "non_binary"))]
     #[test]
     fn convert_bits_test() {
         for _ in 0..65536 {
@@ -196,6 +304,14 @@ mod tests {
             let (hi2, lo2) = super::to_u64_slice(&slice);
             assert_eq!(hi, hi2);
             assert_eq!(lo, lo2);
+        }
+    }
+
+    #[test]
+    fn encode_test() {
+        for i in 0..32767 {
+            let euid = crate::EUID::create_with_extension(i).unwrap();
+            assert_eq!(euid, crate::EUID::from_str(&euid.encode(true)).unwrap());
         }
     }
 
