@@ -2,7 +2,7 @@
 
 ## Extendable Universally Unique Identifier
 
-EUID (Extendable Universally Unique Identifier) is a unique identifier designed to ensure efficient data management through improved sortability and extensibility. EUIDs include timestamps with milliseconds precision and utilize randomness (64 bits, least significant bits) to achieve a predictable order. The extension feature enables the attachment of optional data, enhancing the versatility of EUIDs.
+EUID (Extendable Universally Unique Identifier) is a unique identifier designed to ensure efficient data management through improved sortability and extensibility. EUIDs include timestamps with milliseconds precision and utilize randomness (64 bits, least significant bits) to achieve a predictable order and uniqueness. The extension feature enables the attachment of optional data, enhancing the versatility of EUIDs.
 
 ### Timestamps and Randomness
 
