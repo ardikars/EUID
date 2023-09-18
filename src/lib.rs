@@ -258,6 +258,35 @@ impl Ord for EUID {
     }
 }
 
+impl From<EUID> for [u8; 16] {
+    #[cfg(not(feature = "euid_64"))]
+    fn from(value: EUID) -> Self {
+        (((value.0 as u128) << 64) | (value.1 as u128)).to_be_bytes()
+    }
+
+    #[cfg(feature = "euid_64")]
+    fn from(value: EUID) -> Self {
+        let mut v: [u8; 16] = [0u8; 16];
+        v[0] = ((value.0 >> 56) & 0xff) as u8;
+        v[1] = ((value.0 >> 48) & 0xff) as u8;
+        v[2] = ((value.0 >> 40) & 0xff) as u8;
+        v[3] = ((value.0 >> 32) & 0xff) as u8;
+        v[4] = ((value.0 >> 24) & 0xff) as u8;
+        v[5] = ((value.0 >> 16) & 0xff) as u8;
+        v[6] = ((value.0 >> 8) & 0xff) as u8;
+        v[7] = (value.0 & 0xff) as u8;
+        v[8] = ((value.0 >> 56) & 0xff) as u8;
+        v[9] = ((value.0 >> 48) & 0xff) as u8;
+        v[10] = ((value.0 >> 40) & 0xff) as u8;
+        v[11] = ((value.0 >> 32) & 0xff) as u8;
+        v[12] = ((value.0 >> 24) & 0xff) as u8;
+        v[13] = ((value.0 >> 16) & 0xff) as u8;
+        v[14] = ((value.0 >> 8) & 0xff) as u8;
+        v[15] = (value.0 & 0xff) as u8;
+        v
+    }
+}
+
 impl PartialOrd for EUID {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         if self.0 != other.0 {
@@ -473,6 +502,13 @@ mod tests {
             assert_eq!(euids[i], ordered[i]);
             assert_eq!(euids[i].to_string(), ordered[i].to_string());
         }
+    }
+
+    #[test]
+    fn bytes_test() {
+        let euid: crate::EUID = crate::EUID::create().unwrap_or_default();
+        let bytes: [u8; 16] = From::from(euid);
+        assert_eq!(16, bytes.len());
     }
 
     #[test]
