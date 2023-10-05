@@ -258,6 +258,14 @@ impl Ord for EUID {
     }
 }
 
+impl From<[u8; 16]> for EUID {
+
+    fn from(value: [u8; 16]) -> Self {
+        let id: u128 = u128::from_be_bytes(value);
+        EUID((id >> 64) as u64, (id & 0xffffffffffffffff) as u64)
+    }
+}
+
 impl From<EUID> for [u8; 16] {
     #[cfg(not(feature = "euid_64"))]
     fn from(value: EUID) -> Self {
@@ -508,7 +516,9 @@ mod tests {
     fn bytes_test() {
         let euid: crate::EUID = crate::EUID::create().unwrap_or_default();
         let bytes: [u8; 16] = From::from(euid);
+        let from_bytes: crate::EUID = From::from(bytes);
         assert_eq!(16, bytes.len());
+        assert_eq!(euid, from_bytes);
     }
 
     #[test]
