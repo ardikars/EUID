@@ -252,6 +252,13 @@ impl PartialEq for EUID {
 
 impl Eq for EUID {}
 
+impl std::hash::Hash for EUID {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+        self.1.hash(state);
+    }
+}
+
 impl Ord for EUID {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.partial_cmp(other).unwrap()
@@ -259,7 +266,6 @@ impl Ord for EUID {
 }
 
 impl From<[u8; 16]> for EUID {
-
     fn from(value: [u8; 16]) -> Self {
         let id: u128 = u128::from_be_bytes(value);
         EUID((id >> 64) as u64, (id & 0xffffffffffffffff) as u64)
@@ -318,6 +324,7 @@ impl PartialOrd for EUID {
 #[cfg(test)]
 mod tests {
 
+    use std::hash::Hasher;
     use std::str::FromStr;
 
     use rand::{seq::SliceRandom, thread_rng};
@@ -519,6 +526,16 @@ mod tests {
         let from_bytes: crate::EUID = From::from(bytes);
         assert_eq!(16, bytes.len());
         assert_eq!(euid, from_bytes);
+    }
+
+    #[test]
+    fn hash_test() {
+        let euid: crate::EUID = crate::EUID::create().unwrap_or_default();
+        let mut default_hasher0 = std::collections::hash_map::DefaultHasher::new();
+        let mut default_hasher1 = std::collections::hash_map::DefaultHasher::new();
+        std::hash::Hash::hash(&euid, &mut default_hasher0);
+        std::hash::Hash::hash_slice(&[euid], &mut default_hasher1);
+        assert_eq!(default_hasher0.finish(), default_hasher1.finish());
     }
 
     #[test]

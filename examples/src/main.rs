@@ -25,7 +25,7 @@ use std::{env, str::FromStr};
 use euid::EUID;
 
 fn help() {
-    println!("Usage: euid-toys [COMMAND] [ARG1] [ARG2]");
+    println!("Usage: euid-toys [COMMAND] [ARGS..]");
     println!("Examples:");
     println!("  euid-toys create");
     println!("  euid-toys create_with_extension 123");
